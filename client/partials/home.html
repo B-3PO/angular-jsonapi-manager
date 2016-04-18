@@ -1,0 +1,77 @@
+<div class="header">
+    <div class="header-content">
+      Data Manager
+    </div>
+</div>
+
+
+<div>
+
+  <form>
+    <div ng-repeat="location in vm.locations track by location.id" class="data-container">
+      <label>{{location.id}}</label>
+      <input ng-model="location.name" />
+      <button type="button" ng-click="vm.update()">-</button>
+      <input ng-model="location.city" />
+      <button type="button" ng-click="vm.update()">-</button>
+      <input ng-model="location.state" />
+      <button type="button" ng-click="vm.update()">-</button>
+
+
+      <div ng-repeat="item in location.people track by item.id" class="data-container" style="padding-left: 18px; padding-top: 8px;">
+        <label>{{item.id}}</label>
+        <input ng-model="item.name" />
+        <button type="button" ng-click="vm.update()">-</button>
+
+        <div style="padding-bottom: 8px;"></div>
+        <div style="padding-left: 18px;">
+          <label>{{item.job.id}}</label>
+          <input ng-model="item.job.title" />
+          <button type="button" ng-click="vm.update()">-</button>
+        </div>
+
+        <div class="data-container">
+          <label>+</label>
+          <input ng-model="vm.newJob" />
+          <button ng-click="vm.addJob(item.id)">Add Job</button>
+          <button ng-click="vm.addExisting(item.jobs)">Add Existing</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div class="data-container">
+    <input ng-model="vm.newPerson" />
+    <button ng-click="vm.addPerson(item.id)">Add Person</button>
+  </div>
+
+</div>
+
+
+<!-- <div>
+
+  <form>
+    <div ng-repeat="item in vm.theData track by item.id" class="data-container">
+      <label>{{item.id}}</label>
+      <input ng-model="item.name" />
+      <button type="button" ng-click="vm.removeItem($index)">-</button>
+      <div>{{item.arr}}</div>
+    </div>
+  </form>
+
+  <form>
+    <div class="data-container">
+      <label>Name</label>
+      <input ng-model="vm.addInfo.name" />
+
+      <label>Age</label>
+      <input ng-model="vm.addInfo.age" />
+
+      <label>Email</label>
+      <input ng-model="vm.addInfo.email" />
+
+      <button ng-click="vm.addData()">Submit</button>
+    </div>
+  </form>
+
+</div> -->
