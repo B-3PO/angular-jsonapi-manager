@@ -31,7 +31,11 @@ function jsonapi() {
         attributes: angular.copy(data)
       };
 
-    } else if (op === 'relationship') {
+      if (obj.data.attributes.id !== undefined) {
+        delete obj.data.attributes.id;
+      }
+
+    } else if (op === 'relationship' || op === 'removeRelationship') {
       obj.data = angular.copy(data);
     }
 
@@ -47,7 +51,7 @@ function jsonapi() {
 
   function parse(payload, typescopes) {
     var jsonapiTypescopes = buildTypescopes(payload);
-    combineTypescopes(jsonapiTypescopes, typescopes);
+    jsonapiTypescopes = combineTypescopes(jsonapiTypescopes, typescopes);
 
     return {
       typescopes: jsonapiTypescopes,
@@ -248,22 +252,46 @@ function jsonapi() {
     var i;
     var length = sub.length;
 
-    main.forEach(function (item) {
+    // overide from user input
+    main = main.map(function (item) {
       i = 0;
       while (i < length) {
         if (sub[i].map === item.map && sub[i].type === item.type) {
-          item.urls.url = sub[i].urls.url || item.urls.url;
-          item.urls.createUrl = sub[i].urls.createUrl || item.urls.createUrl;
-          item.urls.updateUrl = sub[i].urls.updateUrl || item.urls.updateUrl;
-          item.urls.deleteUrl = sub[i].urls.deleteUrl || item.urls.deleteUrl;
-          return;
+          freeze(sub[i]);
+          return sub[i];
         }
 
         i += 1;
       }
 
       freeze(item);
+      return item;
     });
+
+
+    // combine
+
+    if (main.length < sub.length) {
+      length = main.length;
+      sub.forEach(function (item) {
+        var isFound = false;
+        i = 0;
+        while (i < length) {
+          if (main[i].map === item.map && main[i].type === item.type) {
+            isFound = true;
+            break;
+          }
+
+          i += 1;
+        }
+
+        if (isFound === false) {
+          main.push(item);
+        }
+      });
+    }
+
+    return main;
   }
 
 
@@ -291,7 +319,9 @@ function jsonapi() {
       map: '',
       // TODO if data is an array then loop through it with the assumption that not all the types are the same
       type: data[0].type,
-      urls: {}
+      urls: {
+        url: '/' + data[0].type
+      }
     });
 
 
@@ -300,7 +330,7 @@ function jsonapi() {
     key = keys.pop();
 
     while (key !== undefined) {
-      type = getTypeFromRelation(data[0].relationships[key])
+      type = getTypeFromRelation(data[0].relationships[key]);
 
       if (containsScope(scopes, type) === false) {
         parentScope = getScopeByType(scopes, data[0].type);
@@ -328,7 +358,7 @@ function jsonapi() {
         key = keys.pop();
 
         while (key !== undefined) {
-          type = getTypeFromRelation(payload.included[i].relationships[key])
+          type = getTypeFromRelation(payload.included[i].relationships[key]);
           if (containsScope(scopes, type) === false) {
             parentScope = getScopeByType(scopes, payload.included[i].type);
             scopes.push({
@@ -361,7 +391,7 @@ function jsonapi() {
     if (relation.data instanceof Array && relation.data.length > 0) {
       return relation.data[0].type;
     } else if (typeof relation.data === 'object' && relation.data !== null) {
-      relation.data.type;
+      return relation.data.type;
     }
   }
 

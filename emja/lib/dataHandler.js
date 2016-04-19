@@ -31,7 +31,6 @@ exports.addEdit = function (req, res) {
   // TODO handle no id
   // TODO handle no data
 
-  console.log(buildUpdateQuery(data, id));
   runQuery(buildUpdateQuery(data, id), function (status) {
     res.status(status).end();
   });
@@ -74,37 +73,6 @@ exports.deleteRelations = function (req, res, config) {
 };
 
 
-function buildDeleteRelationQuery(parentId, property, data, resource) {
-  var query;
-  var relationship = resource.relationships[property];
-  var type = relationship.resource.type;
-
-
-  if (relationship.parentRelation.manyToMany === true) {
-    query = 'delete ' + relationship.parentRelation.table + '\n';
-    query += 'from ' + relationship.parentRelation.table + '\n';
-    query += 'inner join ' + relationship.parentRelation.parentTable + ' on ' + relationship.parentRelation.table + '.' + relationship.parentRelation.parentField + '=' + relationship.parentRelation.parentTable + '.id\n';
-    query += 'inner join ' + type.table + ' on ' + relationship.parentRelation.table + '.' + relationship.parentRelation.field + '=' + type.table + '.id\n';
-    query += 'where ' + type.table + '.' + getIdField(data.id) + '=\'' + data.id + '\'';
-  } else {
-
-    if (relationship.parentRelation.many === true) {
-      query = 'update ' + type.table + '\n';
-      query += 'set ' + type.table + '.' + relationship.parentRelation.parentField + '=null\n';
-    } else {
-      query = 'update ' + relationship.parentRelation.parentTable + '\n';
-      query += 'set ' + relationship.parentRelation.field + '=null\n';
-    }
-
-    query += 'where ' + relationship.parentRelation.parentTable + '.' + getIdField(parentId) + '=\'' + parentId + '\'';
-  }
-
-  return query;
-}
-
-
-
-
 
 
 // --- Format Data -------------
@@ -139,7 +107,7 @@ function convertAttributesForSQL(dataAttrs, typeAttrs) {
       // turn joins into regex and split attribute with that
       if (splitString !== undefined && splitString.length > 0) {
         regEx = new RegExp(splitString, 'i');
-        splitString = dataAttrs[key].trim().split(regEx);
+        splitString = String(dataAttrs[key]).trim().split(regEx);
 
         typeAttrs[key].build.forEach(function (item) {
           if (item.field !== undefined) {
@@ -484,6 +452,36 @@ function runQuery(query, callback) {
 
 
 
+function buildDeleteRelationQuery(parentId, property, data, resource) {
+  var query;
+  var relationship = resource.relationships[property];
+  var type = relationship.resource.type;
+
+
+  if (relationship.parentRelation.manyToMany === true) {
+    query = 'delete ' + relationship.parentRelation.table + '\n';
+    query += 'from ' + relationship.parentRelation.table + '\n';
+    query += 'inner join ' + relationship.parentRelation.parentTable + ' on ' + relationship.parentRelation.table + '.' + relationship.parentRelation.parentField + '=' + relationship.parentRelation.parentTable + '.id\n';
+    query += 'inner join ' + type.table + ' on ' + relationship.parentRelation.table + '.' + relationship.parentRelation.field + '=' + type.table + '.id\n';
+    query += 'where ' + type.table + '.' + getIdField(data.id) + '=\'' + data.id + '\'';
+  } else {
+
+    if (relationship.parentRelation.many === true) {
+      query = 'update ' + type.table + '\n';
+      query += 'set ' + type.table + '.' + relationship.parentRelation.parentField + '=null\n';
+    } else {
+      query = 'update ' + relationship.parentRelation.parentTable + '\n';
+      query += 'set ' + relationship.parentRelation.field + '=null\n';
+    }
+
+    query += 'where ' + relationship.parentRelation.parentTable + '.' + getIdField(parentId) + '=\'' + parentId + '\'';
+  }
+
+  return query;
+}
+
+
+
 function buildRelationshipQuery(data, parentId, property, resource) {
   var query;
   var relationship = resource.relationships[property];
@@ -518,10 +516,11 @@ function buildRelationshipQuery(data, parentId, property, resource) {
 }
 
 
-
 function buildUpdateQuery(data, id) {
   var type = types[data.type];
   var convertedAttrs = convertAttributesForSQL(data.attributes, type.attributes);
+
+  //
 
   var query = 'insert into ' + type.table + ' (uuid';
   query += Object.keys(convertedAttrs).reduce(function (a, key) {
@@ -549,6 +548,8 @@ function buildUpdateQuery(data, id) {
 }
 
 
+
+
 function buildQuery(structure, id) {
   var query;
   var queryObj = {attributes: {}, joins: []};
@@ -570,8 +571,10 @@ function buildQuery(structure, id) {
   if (id !== undefined) {
     query += ' where ' + structure.table + '.' + getIdField(id) + '=\'' + id + '\'';
   }
+
   return query;
 }
+
 
 function addJoins(relations, queryObj) {
   if (relations === undefined) { return; }
@@ -580,7 +583,6 @@ function addJoins(relations, queryObj) {
   var parentRelation;
   var keys = Object.keys(relations);
   var key = keys.pop();
-
 
   while (key !== undefined) {
     relationship = relations[key];

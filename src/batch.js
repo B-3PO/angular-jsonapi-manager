@@ -49,7 +49,7 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
       // if items are added, update view
       // NOTE This check can go deeper into the patch and see if the item is new or just being added
       // TODO listen to the not above
-      if (updateView === false && diff.op === 'add') { updateView = true; }
+      if (updateView === false && diff.op === 'add' || (diff.op === 'replace' && diff.type === undefined)) { updateView = true; }
       // TODO  Create a reverse request along side the requests
       requestObjects = requestObjects.concat(opRequests[diff.op](diff, options.typescopes));
 
@@ -273,7 +273,7 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
 
 
     // create value object
-    if (diff.prop === undefined) {
+    if (diff.prop === undefined || diff.singleResource === true) {
       value = diff.value;
     } else {
       value = {};
@@ -293,13 +293,16 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
 
     // if item is child of a typescope then treat is as a relationship
     if (diff.parentId !== undefined) {
-      // TODO might need to change the end type to the property name
       updateUrl += '/' + diff.parentId + '/relationships/' + typescope.prop + '/' + value.id;
 
       request.push({
         op: 'relationship', // relationship is a type of update
         url: updateUrl,
         data: {
+          type: typescope.type,
+          id: value.id
+        },
+        oldData: {
           type: typescope.type,
           id: value.id
         },
@@ -327,15 +330,35 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
   // --- Get Remove Request ---
   function getRemoveRequest(diff, typescopes) {
     var typescope = dMUtil.getTypeScope(diff.path, diff.type, typescopes);
-    var removeUrl = (typescope.urls.deleteUrl || typescope.urls.url) + '/' + diff.id;
 
-    return {
-      op: 'remove',
-      url: removeUrl,
-      oldData: angular.copy(diff.oldData),
-      parentId: diff.parentId,
-      precedence: getPrecedence(typescope, 0) // precedence for add calls. smallest first
-    };
+
+    // if item is child of a typescope then treat is as a relationship
+    if (diff.parentId !== undefined) {
+      return {
+        op: 'removeRelationship', // removeRelationship is a type of delete
+        url: (typescope.parentScope.urls.deleteUrl || typescope.parentScope.urls.url) + '/' + diff.parentId + '/relationships/' + typescope.prop + '/' + diff.id,
+        data: {
+          type: typescope.type,
+          id: diff.id
+        },
+        oldData: {
+          type: typescope.type,
+          id: diff.id
+        },
+        // NOTE set at 1000 with the assumption there will not be scopping that deep
+        precedence: 1000 // 1000 for update calls. smallest first
+      };
+
+    } else {
+
+      return {
+        op: 'remove',
+        url: (typescope.urls.deleteUrl || typescope.urls.url) + '/' + diff.id,
+        oldData: angular.copy(diff.oldData),
+        parentId: diff.parentId,
+        precedence: getPrecedence(typescope, 0) // precedence for add calls. smallest first
+      };
+    }
   }
 
 
@@ -345,6 +368,15 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
     var oldData;
     var typescope = dMUtil.getTypeScope(diff.path, diff.type, typescopes);
     var updateUrl = (typescope.urls.updateUrl || typescope.urls.url) + '/' + diff.id;
+
+    // TODO create better path for single object creation
+    if (diff.type === undefined && typescope !== undefined) {
+      diff.type = typescope.type;
+      diff.newItem = true;
+      diff.singleResource = true;
+      diff.parentId = diff.id;
+      return getAddRequest(diff, typescopes);
+    }
 
 
     // get value as object

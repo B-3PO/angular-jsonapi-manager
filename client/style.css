@@ -24,3 +24,9 @@ html, body {
   padding: 20px;
   border-bottom: 1px solid #CCC;
 }
+
+
+.set-width-label {
+  display: inline-block;
+  width: 110px;
+}

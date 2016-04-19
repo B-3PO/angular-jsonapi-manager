@@ -122,7 +122,11 @@ function processType(config) {
       if (item.manyToMany === true) {
         item.parentField = item.parentField || config.table;
         // TODO find out current conventions
-        item.table = item.table || item.parentField + '_x_' + item.field;
+        item.table = item.table || [item.parentField, item.field].sort(function (a, b) {
+          if (a < b) { return -1; }
+          if (a > b) { return 1; }
+          return 0;
+        }).join('_');
       } else {
         if (item.many === true) { item.parentField = item.parentField || config.table; }
         item.table = item.table || config.table;
@@ -172,12 +176,12 @@ function CreateResource(config) {
   });
 
   // delete relation
-  router.delete('/:id/relationship/:property', function(req, res) {
+  router.delete('/:id/relationships/:property/:relationId?', function(req, res) {
     dataHandler.deleteRelations(req, res, config);
   });
 
   // relationships
-  router.put('/:id/relationship/:property', function(req, res) {
+  router.put('/:id/relationships/:property/:relationId?', function(req, res) {
     dataHandler.relationship(req, res, config);
   });
 

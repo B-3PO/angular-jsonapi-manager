@@ -137,7 +137,6 @@ function dMUtil(dMStorage, $dMConstant, $rootScope) {
 
 
   function getTypeScope(path, type, typescopes) {
-    console.log(path, typescopes)
     var i = 0;
     var length = typescopes.length;
     path = getTypescopePath(path);

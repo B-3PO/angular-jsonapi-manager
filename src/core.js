@@ -40,6 +40,7 @@ function dataManagerProvider() {
     baseURL: '',
     objectId: 'id',
     postOnly: false,
+    createPost: false,
     getOnly: false,
     jsonapi: true,
     headers: undefined,
@@ -64,6 +65,7 @@ function dataManagerProvider() {
     var objectId = provider.objectId;
     var getOnly = provider.getOnly;
     var postOnly = provider.postOnly;
+    var createPost = provider.createPost;
     var jsonapiGlobal = provider.jsonapi;
 
 
@@ -112,7 +114,8 @@ function dataManagerProvider() {
       options.jsonapi = options.jsonapi !== undefined ? options.jsonapi : jsonapiGlobal;
       options.requestModifiers = {
         getOnly: options.getOnly !== undefined ? options.getOnly : getOnly,
-        postOnly: options.postOnly !== undefined ? options.postOnly : getOnly,
+        postOnly: options.postOnly !== undefined ? options.postOnly : postOnly,
+        createPost: options.createPost !== undefined ? options.createPost : createPost,
         jsonapi: options.jsonapi !== undefined ? options.jsonapi : jsonapiGlobal
       };
 
@@ -289,7 +292,11 @@ function dataManagerProvider() {
           if (id === undefined) {
             return opt.included[type];
           } else {
-            return getTypeItem(opt.included[type], id);
+            if (type === opt.typescopes[0].type) {
+              return getTypeItem(opt.data, id);
+            } else {
+              return getTypeItem(opt.included[type], id);
+            }
           }
 
           return undefined;

@@ -146,7 +146,7 @@ function jsonPatchService() {
             break;
           }
         }
-        
+
         obj = obj[key];
 
       }
@@ -436,11 +436,13 @@ function jsonPatchService() {
             op: 'replace',
             path: path + '/' + escapePath(key),
             value: deepClone(newValue),
+            valueReference: newValue,
 
             id: obj[objectId] !== undefined ? obj[objectId] : undefined,
             type: obj.typescope !== undefined ? obj.typescope.type : undefined,
             prop: escapePath(key),
-            oldData: deepClone(oldValue)
+            oldData: deepClone(oldValue),
+            parentId: parentId
           });
 
 
