@@ -2,8 +2,8 @@
 
 
 angular
-  .module('dataManager', [])
-  .provider('dataManager', dataManagerProvider)
+  .module('jsonapiManager', [])
+  .provider('jsonapiManager', dataManagerProvider)
   .constant('$dMConstant', {
     DEFAULT_DEBOUNCE_TIME: 500,
     STORED_DATA_PREFIX: '_dMData_',
@@ -44,7 +44,7 @@ function dataManagerProvider() {
     getOnly: false,
     jsonapi: true,
     headers: undefined,
-    $get: ['$dMConstant', 'dMUtil', 'requester', '$dataGetter', 'standardJSON', 'jsonapi', 'dMBatch', 'dMJSONPatch', dataManagerService]
+    $get: ['$dMConstant', 'dMUtil', 'dMRequester', '$dataGetter', 'standardJSON', 'jsonapi', 'dMBatch', 'dMJSONPatch', dataManagerService]
   };
   return provider;
 
@@ -60,7 +60,7 @@ function dataManagerProvider() {
     *
     *
     */
-  function dataManagerService($dMConstant, dMUtil, requester, $dataGetter, standardJSON, jsonapi, dMBatch, dMJSONPatch) {
+  function dataManagerService($dMConstant, dMUtil, dMRequester, $dataGetter, standardJSON, jsonapi, dMBatch, dMJSONPatch) {
     var versionKeyData;
     var objectId = provider.objectId;
     var getOnly = provider.getOnly;
@@ -69,8 +69,8 @@ function dataManagerProvider() {
     var jsonapiGlobal = provider.jsonapi;
 
 
-    // pass params to requester class
-    requester.init({
+    // pass params to dMRequester class
+    dMRequester.init({
       baseURL: provider.baseURL || '',
       headers: provider.headers
     });
@@ -237,7 +237,7 @@ function dataManagerProvider() {
             }
 
             if (opt.jsonapi === true) {
-              jsonapiData = jsonapi.parse(data, opt.typescopes);
+              jsonapiData = jsonapi._internalParse(data, opt.typescopes);
               data = angular.copy(jsonapiData.data);
               opt.typescopes = jsonapiData.typescopes;
             }
@@ -251,7 +251,6 @@ function dataManagerProvider() {
             }
 
             data = standardJSON.parse(data, opt.typescopes);
-
             opt.data = data.data;
             opt.oldValue = angular.copy(data.data);
             opt.included = data.included;
@@ -425,7 +424,8 @@ function dataManagerProvider() {
             updateUrl: rel.updateUrl,
             deleteUrl: rel.deleteUrl
           },
-          parentScope: parentScope
+          parentScope: parentScope,
+          parentRelationshipMany: rel.many || false
         });
 
         arr.push(newScope);

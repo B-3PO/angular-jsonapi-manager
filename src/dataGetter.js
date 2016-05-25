@@ -1,11 +1,11 @@
 angular
-  .module('dataManager')
+  .module('jsonapiManager')
   .factory('$dataGetter', dataGetter);
 
 
 
-dataGetter.$inject = ['requester', 'dMStorage', 'dMUtil', '$dMConstant', 'dMHistory'];
-function dataGetter(requester, dMStorage, dMUtil, $dMConstant, dMHistory) {
+dataGetter.$inject = ['dMRequester', 'dMStorage', 'dMUtil', '$dMConstant', 'dMHistory'];
+function dataGetter(dMRequester, dMStorage, dMUtil, $dMConstant, dMHistory) {
 
   return function get(urlId, url, requestModifiers, callback) {
     handShake(urlId, url, requestModifiers, function (error, isVersioning, getUpdate, postUpdate, response) {
@@ -69,7 +69,7 @@ function dataGetter(requester, dMStorage, dMUtil, $dMConstant, dMHistory) {
       url += '&cb=' + dMUtil.now();
     }
 
-    requester.head(url, handshakeHeaders, requestModifiers, function (error, response, headers) {
+    dMRequester.head(url, handshakeHeaders, requestModifiers, function (error, response, headers) {
       if (error !== undefined) {
         callback(true);
         return;
@@ -92,7 +92,7 @@ function dataGetter(requester, dMStorage, dMUtil, $dMConstant, dMHistory) {
   function getNewData(urlId, url, requestModifiers, callback) {
     var newVersion = dMUtil.hashString(url + dMUtil.now().toString());
 
-    requester.get(url, false, newVersion, requestModifiers, function (error, response) {
+    dMRequester.get(url, false, newVersion, requestModifiers, function (error, response) {
       if (error !== undefined) {
         callback(true);
         return;
@@ -117,8 +117,8 @@ function dataGetter(requester, dMStorage, dMUtil, $dMConstant, dMHistory) {
       getNewData(urlId, url, requestModifiers, callback);
       return;
     }
-    
-    requester.get(url, false, version.key, requestModifiers, function (error, response) {
+
+    dMRequester.get(url, false, version.key, requestModifiers, function (error, response) {
       if (error !== undefined) {
         callback(true);
         return;

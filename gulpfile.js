@@ -56,10 +56,10 @@ gulp.task('release', function () {
     .pipe(jshint())
     .pipe(jshint.reporter('default'))
     .pipe(jshint.reporter('fail'))
-    .pipe(concat('dataManager.js'))
+    .pipe(concat('jsonapi-manager.js'))
     .pipe(gulp.dest('build/'))
     .pipe(uglify())
-    .pipe(rename('dataManager.min.js'))
+    .pipe(rename('jsonapi-manager.min.js'))
     .pipe(gulp.dest('build/'))
     .on('end', function () {
       gutil.log(gutil.colors.green('✔ Release'), 'Built');

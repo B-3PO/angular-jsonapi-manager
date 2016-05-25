@@ -1,10 +1,10 @@
 angular
-  .module('dataManager')
+  .module('jsonapiManager')
   .factory('dMBatch', batchService);
 
 
-batchService.$inject = ['dMJSONPatch', 'dMHistory', 'dMUtil', 'requester'];
-function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
+batchService.$inject = ['dMJSONPatch', 'dMHistory', 'dMUtil', 'dMRequester'];
+function batchService(dMJSONPatch, dMHistory, dMUtil, dMRequester) {
   var defineProperty = Object.defineProperty;
 
   var current;
@@ -173,7 +173,7 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
     }).forEach(function (item) {
       callcount += 1;
 
-      requester.send(item, requestModifiers, reverseItems, function (error) {
+      dMRequester.send(item, requestModifiers, reverseItems, function (error) {
         if (error !== undefined) {
           rollback = true;
           item.success = false;
@@ -293,7 +293,7 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
 
     // if item is child of a typescope then treat is as a relationship
     if (diff.parentId !== undefined) {
-      updateUrl += '/' + diff.parentId + '/relationships/' + typescope.prop + '/' + value.id;
+      updateUrl += '/' + diff.parentId + '/relationships/' + typescope.prop;
 
       request.push({
         op: 'relationship', // relationship is a type of update
@@ -306,6 +306,7 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
           type: typescope.type,
           id: value.id
         },
+        many: typescope.parentRelationshipMany,
         // NOTE set at 1000 with the assumption there will not be scopping that deep
         precedence: 1000 // 1000 for update calls. smallest first
       });
@@ -345,6 +346,7 @@ function batchService(dMJSONPatch, dMHistory, dMUtil, requester) {
           type: typescope.type,
           id: diff.id
         },
+        many: typescope.parentRelationshipMany,
         // NOTE set at 1000 with the assumption there will not be scopping that deep
         precedence: 1000 // 1000 for update calls. smallest first
       };

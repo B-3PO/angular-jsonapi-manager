@@ -1,5 +1,5 @@
 angular
-  .module('dataManager')
+  .module('jsonapiManager')
   .factory('jsonapi', jsonapi);
 
 
@@ -9,6 +9,7 @@ function jsonapi() {
   var defineProperty = Object.defineProperty;
 
   var service = {
+    _internalParse: _internalParse,
     parse: parse,
     format: format
   };
@@ -22,6 +23,7 @@ function jsonapi() {
   // --------------------------------
 
   function format(data, type, op) {
+    op = op || 'add';
     var obj = {};
 
     if (op === 'add' || op === 'update') {
@@ -49,7 +51,8 @@ function jsonapi() {
   // --- Parse ----------------------
   // --------------------------------
 
-  function parse(payload, typescopes) {
+
+  function _internalParse(payload, typescopes) {
     var jsonapiTypescopes = buildTypescopes(payload);
     jsonapiTypescopes = combineTypescopes(jsonapiTypescopes, typescopes);
 
@@ -57,6 +60,10 @@ function jsonapi() {
       typescopes: jsonapiTypescopes,
       data: parseData(payload, jsonapiTypescopes)
     };
+  }
+
+  function parse(payload) {
+    return parseData(payload);
   }
 
 
@@ -112,6 +119,8 @@ function jsonapi() {
   }
 
   function getTypescope(type, typeScopes) {
+    if (typeScopes === undefined) { return undefined; }
+
     var i = 0;
     var length = typeScopes.length;
 
@@ -324,9 +333,8 @@ function jsonapi() {
       }
     });
 
-
     // root relations
-    keys = Object.keys(data[0].relationships);
+    keys = Object.keys(data[0].relationships || {});
     key = keys.pop();
 
     while (key !== undefined) {
@@ -342,7 +350,8 @@ function jsonapi() {
             // TODO can i use prop for the url?
             url: '/' + key
           },
-          parentScope: parentScope
+          parentScope: parentScope,
+          parentRelationshipMany: (data[0].relationships[key].data instanceof Array)
         });
       }
 
@@ -361,16 +370,19 @@ function jsonapi() {
           type = getTypeFromRelation(payload.included[i].relationships[key]);
           if (containsScope(scopes, type) === false) {
             parentScope = getScopeByType(scopes, payload.included[i].type);
-            scopes.push({
-              map: (parentScope.map + '/' + key).replace(/^\//, ''),
-              prop: key,
-              type: type,
-              urls: {
-                // TODO can i use prop for the url?
-                url: '/' + key
-              },
-              parentScope: parentScope
-            });
+            if (parentScope !== undefined) {
+              scopes.push({
+                map: (parentScope.map + '/' + key).replace(/^\//, ''),
+                prop: key,
+                type: type,
+                urls: {
+                  // TODO can i use prop for the url?
+                  url: '/' + key
+                },
+                parentScope: parentScope,
+                parentRelationshipMany: (payload.included[i].relationships[key].data instanceof Array)
+              });
+            }
           }
 
           key = keys.pop();
@@ -404,7 +416,7 @@ function jsonapi() {
       i += 1;
     }
 
-    return indefined;
+    return undefined;
   }
 
   function containsScope(arr, type) {

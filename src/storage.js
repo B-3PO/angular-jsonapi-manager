@@ -1,5 +1,5 @@
 angular
-  .module('dataManager')
+  .module('jsonapiManager')
   .provider('dMStorage', storageProvider);
 
 

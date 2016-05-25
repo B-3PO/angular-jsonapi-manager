@@ -1,5 +1,5 @@
 angular
-  .module('dataManager')
+  .module('jsonapiManager')
   .factory('standardJSON', standardJSON);
 
 

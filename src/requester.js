@@ -1,6 +1,6 @@
-angular
-  .module('dataManager')
-  .factory('requester', requesterService);
+ angular
+  .module('jsonapiManager')
+  .factory('dMRequester', requesterService);
 
 
 
@@ -78,8 +78,12 @@ function requesterService($http, jsonapi){
     if (op === 'add') {
       // TODO add option to allow this to be post. (seperate from postOnly)
       method = requestModifiers.postOnly === true || requestModifiers.createPost === true ? 'POST' : 'PUT';
-    } else if (op === 'update' || op === 'relationship') {
+    } else if (op === 'update') {
       method = requestModifiers.postOnly === true ? 'POST' : 'PUT';
+    } else if (op === 'relationship') {
+      method = 'POST';
+      // TODO add a paramter wor switching between post(add) and put(replace)
+      // method = requestModifiers.postOnly === true ? 'POST' : 'PUT';
     } else if (op === 'remove' || op === 'removeRelationship') {
       method = requestModifiers.postOnly === true ? 'POST' : 'DELETE';
     }
@@ -108,10 +112,19 @@ function requesterService($http, jsonapi){
   }
 
   function getData(item, op, reverse, isJSONAPI) {
+    var data;
     // TODO do i need to do special formatting on non jsonapi calls?
 
     if (op === 'remove') {
       return undefined;
+    } else if (op === 'relationship' || op === 'removeRelationship') {
+      if (reverse === true) {
+        data = item.many ? [].concat(item.oldData) : item.oldData; // NOTE if item is many then data for relation must be in an array
+        return isJSONAPI === true ? jsonapi.format(data, item.type, op) : data;
+      } else {
+        data = item.many ? [].concat(item.data) : item.data; // if item is many then data for relation must be in an array
+        return isJSONAPI === true ? jsonapi.format(data, item.type, op) : data;
+      }
     } else {
       if (reverse === true) {
         return isJSONAPI === true ? jsonapi.format(item.oldData, item.type, op) : item.oldData;
@@ -166,21 +179,15 @@ function requesterService($http, jsonapi){
     // headers: { 'Accept-Encoding': 'gzip' }})
     $http(requestObj)
       .success(function (response, status, headers) {
-        if (status === 200) {
-
-          // run custom data validator
-          if (typeof validator === 'function' && validator(response) === false) {
-            if (typeof requestOptions.callback === 'function') {
-              requestOptions.callback(true);
-              return;
-            }
+        // run custom data validator
+        if (typeof validator === 'function' && validator(response) === false) {
+          if (typeof requestOptions.callback === 'function') {
+            requestOptions.callback(true);
+            return;
           }
-
-          if (typeof requestOptions.callback === 'function') { requestOptions.callback(undefined, response, headers); }
-
-        } else {
-          if (typeof requestOptions.callback === 'function') { requestOptions.callback(true); }
         }
+
+        if (typeof requestOptions.callback === 'function') { requestOptions.callback(undefined, response, headers); }
       })
       .error(function (response, status) {
         if (typeof requestOptions.callback === 'function') { requestOptions.callback(true); }

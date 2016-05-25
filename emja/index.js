@@ -83,6 +83,7 @@ function addType(config) {
 }
 
 function processType(config) {
+  console.log(config);
   var keys;
   var key;
 
@@ -134,6 +135,7 @@ function processType(config) {
     });
   }
 
+  console.log(config);
   return config;
 }
 

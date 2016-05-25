@@ -5,11 +5,11 @@ angular
 
 
 
-HomeController.$inject = ['dataManager', '$timeout', 'requester'];
-function HomeController(dataManager, $timeout, requester) {
+HomeController.$inject = ['jsonapiManager', '$timeout'];
+function HomeController(jsonapiManager, $timeout) {
   var vm = this;
 
-  var locationManager = dataManager.create({
+  var locationManager = jsonapiManager.create({
     url: '/locations',
     include: ['people', 'people.job']
   });
