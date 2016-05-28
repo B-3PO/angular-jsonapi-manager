@@ -337,7 +337,12 @@ function dataManagerProvider() {
           * @param {function} [callback]
           */
         function removeChanges(callback) {
-          opt.data = angular.copy(opt.oldValue);
+          // TODO check to see if it will be more perforant to reverse patches instead of rebuilding data
+          // TODO need to restructure the get type call to rehook the object
+          var data = standardJSON.parse(opt.original, opt.typescopes);
+          opt.data = data.data;
+          opt.oldValue = angular.copy(data.data);
+          opt.included = data.included;
 
           if (typeof callback === 'function') {
             callabck(opt.data);
