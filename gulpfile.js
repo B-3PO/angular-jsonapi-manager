@@ -5,40 +5,39 @@ var gutil = require('gulp-util');
 var inject = require('gulp-inject');
 var gulpFilter = require('gulp-filter');
 var concat = require('gulp-concat');
-var nodemon = require('gulp-nodemon');
 var del = require('del');
 var runSequence = require('run-sequence');
 var wrap = require("gulp-wrap");
 var uglify = require('gulp-uglify');
 var rename = require("gulp-rename");
 var stripDebug = require('gulp-strip-debug');
+var serve = require('gulp-serve');
 
 
 
-var BASE = 'src/';
+var BASE = 'src2/';
 var paths = {
-  scripts: ['!client/angular/', BASE + '*.js', 'client/app.js', 'client/controller.js'],
-  index: ['client/index.html'],
-  partials: ['client/partials/*.html'],
-  css: ['client/style.css']
+  scripts: ['!client2/angular/', BASE + '*.js', BASE + '**/*.js', 'client2/app.js', 'client2/controller.js'],
+  index: ['client2/index.html'],
+  partials: ['client2/partials/*.html'],
+  css: ['client2/style.css']
 };
 
 
 
 
-// --- Nodemon ---
 
-
-gulp.task('server', function () {
-  nodemon({
-    script: 'server.js',
-    ext: 'js html',
-    ignore: [BASE, 'client/', 'public/', 'gulpfile.js', 'package.json'],
-    env: { 'NODE_ENV': 'development' }
-  })
+gulp.task('default', function () {
+  runSequence(
+    'clean',
+    ['build', 'serve', 'watch']
+  );
 });
 
-
+gulp.task('serve', serve({
+  root: ['public'],
+  port: 8080
+}));
 
 
 // --- Clean Path -------
@@ -75,7 +74,7 @@ gulp.task('release', function () {
 
 gulp.task('build', function () {
 
-  gulp.src(['client/angular/*.js'])
+  gulp.src(['client2/angular/*.js'])
     .pipe(gulp.dest('public/angular/'))
     .on('end', function () {
 
@@ -84,7 +83,7 @@ gulp.task('build', function () {
         .pipe(wrap('(function(){"use strict";<%= contents %>}());'))
         .pipe(jshint())
         .pipe(jshint.reporter('default'))
-        // .pipe(flatten())
+        .pipe(flatten())
         .pipe(gulp.dest('public/javascripts'))
         .on('end', function () {
           // copy partials
@@ -95,9 +94,13 @@ gulp.task('build', function () {
           gulp.src(paths.css)
             .pipe(gulp.dest('public/stylesheets'));
 
+          // modules
+          gulp.src('client2/modules/**')
+            .pipe(gulp.dest('public/modules'));
+
           // inject index
           gulp.src(paths.index)
-            .pipe(inject(gulp.src(['public/javascripts/core.js', 'public/javascripts/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
+            .pipe(inject(gulp.src(['public/javascripts/core.js', 'public/javascripts/**/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
             .pipe(gulp.dest('public'))
             .on('end', function () {
               gutil.log(gutil.colors.green('✔ Build'), 'Finished');
@@ -145,11 +148,11 @@ gulp.task('watch', function () {
       .pipe(jshint.reporter('default'))
 
       // save file to javascripts folder
-      // .pipe(flatten())
+      .pipe(flatten())
       .pipe(gulp.dest('public/javascripts'))
       .on('end', function () {
         gulp.src(paths.index)
-          .pipe(inject(gulp.src(['public/javascripts/core.js', 'public/javascripts/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
+          .pipe(inject(gulp.src(['public/javascripts/core.js', 'public/javascripts/**/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
           .pipe(gulp.dest('public'))
           .on('end', function () {
             gutil.log(gutil.colors.bold.green('✔ JS Task'), 'Finished');
@@ -157,15 +160,4 @@ gulp.task('watch', function () {
       });
   });
 
-});
-
-
-
-
-
-gulp.task('default', function () {
-  runSequence(
-    'clean',
-    ['build', 'server', 'watch']
-  );
 });

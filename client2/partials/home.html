@@ -1,0 +1,89 @@
+<h2>Json Api Data Manager</h2>
+
+<br-button class="br-primary" ng-click="vm.applyChanges()">Apply Changes</br-button>
+<br-button class="br-warn" ng-click="vm.removeChanges()">Remove Changes</br-button>
+
+<div>{{vm.ben.name}}</div>
+
+<h4>Locations</h4>
+
+<div ng-repeat="location in vm.data">
+  <br-expander br-watch-height>
+    <br-expander-header style="background: #eee7e7; border-bottom: 1px solid #DDD;">
+      <div layout="row" layout-align="center center" style="padding-left: 12px;">
+        <span style="padding-right: 4px; font-weight: 500;">Location:</span>
+        {{location.name}}
+      </div>
+    </br-expander-header>
+
+    <br-expander-content>
+
+      <div layout="column" style="padding: 20px;">
+        <br-input>
+          <label>Name</label>
+          <input ng-model="location.name" />
+        </br-input>
+
+        <br-input>
+          <label>City</label>
+          <input ng-model="location.city" />
+        </br-input>
+
+        <br-input>
+          <label>State</label>
+          <input ng-model="location.state" />
+        </br-input>
+
+
+
+        <h5>People</h5>
+        <br-list>
+          <br-item ng-repeat="people in location.people">
+            <br-item-content>
+
+              <div layout="row">
+                <br-input flex>
+                  <label>Name</label>
+                  <input ng-model="people.name" />
+                </br-input>
+
+                <br-input flex>
+                  <label>Age</label>
+                  <input ng-model="people.age" />
+                </br-input>
+
+                <br-input flex>
+                  <label>Email</label>
+                  <input ng-model="people.email" />
+                </br-input>
+              </div>
+
+
+              <h5>Job</h5>
+
+              <div ng-if="people.job" style="padding: 20px; padding-bottom: 42px;">
+                <div layout="row">
+                  <br-input flex>
+                    <label>Title</label>
+                    <input ng-model="people.job.title" />
+                  </br-input>
+
+                  <br-input flex>
+                    <label>Pay</label>
+                    <input ng-model="people.job.pay" />
+                  </br-input>
+                </div>
+              </div>
+
+              <div ng-if="!people.job" style="padding-bottom: 42px;">
+                <br-button class="br-raised br-primary">Add Job</br-button>
+              </div>
+
+            </br-item-content>
+          </br-item>
+        </br-list>
+      </div>
+
+    </br-expander-content>
+  </br-expander>
+</div>
