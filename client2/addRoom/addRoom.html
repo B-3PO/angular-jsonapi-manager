@@ -1,0 +1,15 @@
+<div style="padding: 20px;">
+  <h2>Add Room</h2>
+
+  <div layout="row" layout-align="center center">
+    <br-input>
+      <label>Name</label>
+      <input ng-model="vm.room.name" />
+    </br-input>
+  </div>
+
+  <div layout="row" layout-align="center center">
+    <br-button class="br-warn" ng-click="vm.cancel()">Cancel</br-button>
+    <br-button class="br-primary" ng-click="vm.save()">Save</br-button>
+  </div>
+</div>

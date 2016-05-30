@@ -1,0 +1,27 @@
+<div style="padding: 20px;">
+  <h2>Add Person</h2>
+
+  <div layout="column" layout-align="center center">
+    <br-input>
+      <label>NAme</label>
+      <input ng-model="vm.person.name" />
+    </br-input>
+
+    <br-input>
+      <label>age</label>
+      <input ng-model="vm.person.age" />
+    </br-input>
+
+    <br-input>
+      <label>email</label>
+      <input ng-model="vm.person.email" />
+    </br-input>
+
+    <br-checkbox ng-model="vm.person.working" class="br-primary">Working</br-checkbox>
+  </div>
+
+  <div layout="row" layout-align="center center">
+    <br-button class="br-warn" ng-click="vm.cancel()">Cancel</br-button>
+    <br-button class="br-primary" ng-click="vm.save()">Save</br-button>
+  </div>
+</div>

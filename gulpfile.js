@@ -17,9 +17,10 @@ var serve = require('gulp-serve');
 
 var BASE = 'src2/';
 var paths = {
-  scripts: ['!client2/angular/', BASE + '*.js', BASE + '**/*.js', 'client2/app.js', 'client2/controller.js'],
+  scripts: [BASE + '*.js', BASE + '**/*.js'],
+  clientScripts: ['!client2/modules/**/*.js', 'client2/app.js', 'client2/*.js', 'client2/**/*.js'],
   index: ['client2/index.html'],
-  partials: ['client2/partials/*.html'],
+  partials: ['client2/**/*.html'],
   css: ['client2/style.css']
 };
 
@@ -79,7 +80,7 @@ gulp.task('build', function () {
     .on('end', function () {
 
       // biuld client
-      gulp.src(paths.scripts)
+      gulp.src(paths.scripts.concat(paths.clientScripts))
         .pipe(wrap('(function(){"use strict";<%= contents %>}());'))
         .pipe(jshint())
         .pipe(jshint.reporter('default'))
@@ -88,7 +89,7 @@ gulp.task('build', function () {
         .on('end', function () {
           // copy partials
           gulp.src(paths.partials)
-            .pipe(gulp.dest('public/partials'));
+            .pipe(gulp.dest('public'));
 
           // stylesheets
           gulp.src(paths.css)
@@ -100,7 +101,7 @@ gulp.task('build', function () {
 
           // inject index
           gulp.src(paths.index)
-            .pipe(inject(gulp.src(['public/javascripts/core.js', 'public/javascripts/**/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
+            .pipe(inject(gulp.src(['public/javascripts/app.js', 'public/javascripts/core.js', 'public/javascripts/**/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
             .pipe(gulp.dest('public'))
             .on('end', function () {
               gutil.log(gutil.colors.green('✔ Build'), 'Finished');
@@ -121,7 +122,7 @@ gulp.task('watch', function () {
   // copy partials
   gulp.watch(paths.partials, function (event) {
     gulp.src(event.path)
-      .pipe(gulp.dest('public/partials'))
+      .pipe(gulp.dest('public'))
       .on('end', function () {
         gutil.log(gutil.colors.green('✔ Partials Task'), 'Finished');
       });
@@ -139,7 +140,7 @@ gulp.task('watch', function () {
 
 
   // JS
-  gulp.watch(paths.scripts, function (event) {
+  gulp.watch(paths.scripts.concat(paths.clientScripts), function (event) {
     gulp.src(event.path)
       .pipe(wrap('(function(){"use strict";<%= contents %>}());'))
 
@@ -152,7 +153,7 @@ gulp.task('watch', function () {
       .pipe(gulp.dest('public/javascripts'))
       .on('end', function () {
         gulp.src(paths.index)
-          .pipe(inject(gulp.src(['public/javascripts/core.js', 'public/javascripts/**/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
+          .pipe(inject(gulp.src(['public/javascripts/app.js', 'public/javascripts/core.js', 'public/javascripts/**/*.js'], {read: false}), {relative: true, ignorePath: '../public/'}))
           .pipe(gulp.dest('public'))
           .on('end', function () {
             gutil.log(gutil.colors.bold.green('✔ JS Task'), 'Finished');

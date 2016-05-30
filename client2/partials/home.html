@@ -19,24 +19,41 @@
     <br-expander-content>
 
       <div layout="column" style="padding: 20px;">
-        <br-input>
-          <label>Name</label>
-          <input ng-model="location.name" />
-        </br-input>
+        <div layout="row">
+          <br-input>
+            <label>Name</label>
+            <input ng-model="location.name" />
+          </br-input>
 
-        <br-input>
-          <label>City</label>
-          <input ng-model="location.city" />
-        </br-input>
+          <br-input>
+            <label>City</label>
+            <input ng-model="location.city" />
+          </br-input>
 
-        <br-input>
-          <label>State</label>
-          <input ng-model="location.state" />
-        </br-input>
+          <br-input>
+            <label>State</label>
+            <input ng-model="location.state" />
+          </br-input>
+        </div>
 
+
+
+        <h5>Rooms</h5>
+        <br-button class="br-raised br-primary" ng-click="vm.addRoom(location)">Add Room</br-button>
+        <br-list>
+          <br-item ng-repeat="room in location.rooms">
+            <br-item-content>
+              <br-input flex>
+                <label>Name</label>
+                <input ng-model="room.name" />
+              </br-input>
+            </br-item-content>
+          </br-item>
+        </br-list>
 
 
         <h5>People</h5>
+        <br-button class="br-raised br-primary" ng-click="vm.addPerson(location)">Add Person</br-button>
         <br-list>
           <br-item ng-repeat="people in location.people">
             <br-item-content>
@@ -76,7 +93,7 @@
               </div>
 
               <div ng-if="!people.job" style="padding-bottom: 42px;">
-                <br-button class="br-raised br-primary">Add Job</br-button>
+                <br-button class="br-raised br-primary" ng-click="vm.addJob(people)">Add Job</br-button>
               </div>
 
             </br-item-content>

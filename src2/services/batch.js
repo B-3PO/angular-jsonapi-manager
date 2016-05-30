@@ -5,6 +5,7 @@ angular
 
 jamBatch.$inject = ['jamPatch', 'jamUtil', 'jamRequest', 'jamHistory'];
 function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
+  var defineProperty = Object.defineProperty;
   var current;
   var queue = [];
   var opFormaters = {
@@ -23,9 +24,13 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     var patches = jamPatch.diff(options);
     if (patches.length === 0) { return; }
 
-    var batchItems = patches.map(function (patch) {
-      return opFormaters[patch.op](patch, options);
-    });
+    var batchItems = patches.reduce(function (arr, patch) {
+      var item = opFormaters[patch.op](patch, options);
+
+      if (typeof item === 'object' && item !== null) {
+        return arr.concat(item);
+      }
+    }, []);
 
     // removed dups created because of memeory referenced values
     removeDuplicates(batchItems);
@@ -174,7 +179,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     var value;
     var request = [];
     var typescope = jamUtil.getTypeScope(patch.path, patch.type, options.typescopes);
-
+    
     if (patch.type === undefined || patch.newItem === true) {
       patch.type = typescope.type;
       patch.newItem = true;
@@ -210,7 +215,16 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     }
 
     // if item is child of a typescope then treat is as a relationship
-    if (patch.parentId !== undefined && typescope.constrain !== true) {
+
+    /**
+      * TODO figure out how to handle not calling the relationship on add
+      * NOTE cases to add relationship calls
+      * - new item and no constraint
+      * - existing item that is toMany(should disallow this)
+      * - check for parent id existance(no parent id will exist for top layer object)
+      */
+
+    if (patch.parentId !== undefined && typescope.constraint === undefined) {
       request.push({
         op: 'relationship',
         url: typescope.url,
@@ -222,7 +236,6 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
           type: typescope.type,
           id: value.id
         },
-        many: typescope.parentRelationshipMany,
         // NOTE set at 1000 with the assumption there will not be scopping that deep
         precedence: 1000 // 1000 for update calls. smallest first
       });
@@ -237,7 +250,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
         type: typescope.type,
         data: value,
         parentId: patch.parentId,
-        constrain: typescope.constrain || false,
+        constraint: typescope.constraint,
         precedence: getPrecedence(typescope, 0) // precedence for add calls. smallest first
       });
     }
@@ -252,8 +265,9 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     var typescope = jamUtil.getTypeScope(patch.path, patch.type, options.typescopes);
 
 
+    // TODO figure out casses to send a remove relation request
     // if item is child of a typescope then treat is as a relationship
-    if (patch.parentId !== undefined && typescope.constrain !== true) {
+    if (patch.parentId !== undefined && typescope.constraint === undefined && typescope.toMany === true) {
       request.push({
         op: 'removeRelationship',
         url: typescope.parentScope.url + '/' + patch.parentId + '/relationships/' + typescope.prop + '/' + patch.id,
@@ -265,7 +279,6 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
           type: typescope.type,
           id: patch.id
         },
-        many: typescope.parentRelationshipMany,
         // NOTE set at 1000 with the assumption there will not be scopping that deep
         precedence: 1000 // 1000 for update calls. smallest first
       });
@@ -276,7 +289,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
       url: typescope.urls + '/' + patch.id,
       oldData: angular.copy(patch.oldData),
       parentId: patch.parentId,
-      constrain: typescope.constrain || false,
+      constraint: typescope.constraint,
       precedence: getPrecedence(typescope, 0) // precedence for add calls. smallest first
     });
 

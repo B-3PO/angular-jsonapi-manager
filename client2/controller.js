@@ -5,13 +5,13 @@ angular
 
 
 
-HomeController.$inject = ['jsonApiManager'];
-function HomeController(jsonApiManager) {
+HomeController.$inject = ['jsonApiManager', '$brDialog'];
+function HomeController(jsonApiManager, $brDialog) {
   var vm = this;
 
   var locationManager = jsonApiManager.create({
     url: 'locations',
-    include: ['people', 'people.job']
+    include: ['people', 'people.job', 'rooms']
   }, function (error) {
     console.log(error);
   });
@@ -39,5 +39,34 @@ function HomeController(jsonApiManager) {
 
   vm.removeChanges = function () {
     locationManager.removeChanges();
+  };
+
+
+
+  vm.addJob = function (person) {
+    $brDialog.add({
+      templateUrl: 'addJob/addJob.html',
+      locals: {locationManager: locationManager, personId: person.id},
+      controller: 'AddJobController',
+      controllerAs: 'vm'
+    });
+  };
+
+  vm.addRoom = function (location) {
+    $brDialog.add({
+      templateUrl: 'addRoom/addRoom.html',
+      locals: {locationManager: locationManager, locationId: location.id},
+      controller: 'AddRoomController',
+      controllerAs: 'vm'
+    });
+  };
+
+  vm.addPerson = function (location) {
+    $brDialog.add({
+      templateUrl: 'addPerson/addPerson.html',
+      locals: {locationManager: locationManager, locationId: location.id},
+      controller: 'AddPersonController',
+      controllerAs: 'vm'
+    });
   };
 }

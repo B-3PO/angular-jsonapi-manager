@@ -149,10 +149,13 @@ function jamUtil(jamStorage, jamKeys) {
 
   function buildTypeScopes(options, structure) {
     var typeScopeList = [];
+
     var typeScope = Object.freeze({
       map: '',
       type: structure.type,
-      url: options.url
+      url: options.url,
+      attrs: angular.copy(structure.attributes),
+      relationships: copyRelationships(structure.relationships)
     });
 
     typeScopeList.push(typeScope);
@@ -160,9 +163,29 @@ function jamUtil(jamStorage, jamKeys) {
     return typeScopeList;
   }
 
+  function copyRelationships(relationships) {
+    if (relationships === undefined) { return undefined; }
+
+    var returnObj = {};
+
+    Object.keys(relationships).forEach(function (key) {
+      returnObj[key] = {
+        type: relationships[key].type,
+      };
+
+      if (relationships[key].meta !== undefined) {
+        returnObj[key].toMany = relationships[key].meta.toMany || false;
+        returnObj[key].constraint = relationships[key].meta.constraint ?  relationships[key].meta.constraint.resource : undefined;
+      }
+    });
+
+    return returnObj;
+  }
+
   function parseTypescopes(structure, path, parentScope, typeScopeList) {
     if (structure === undefined) { return; }
 
+    var typeObj;
     var typeScope;
     var relationship;
     var keys = Object.keys(structure);
@@ -170,15 +193,27 @@ function jamUtil(jamStorage, jamKeys) {
 
     while (key !== undefined) {
       relationship = structure[key];
-      typeScope = Object.freeze({
+      typeObj = {
         map: (path + '/' + key).replace(/^\//, ''),
         prop: key,
         type: relationship.type,
         url: key,
         parentScope: parentScope,
-        toMany: relationship.meta ? (relationship.meta.many || false) : false,
-        constrain: relationship.meta ? (relationship.meta.constrain || false) : false
-      });
+        attrs: angular.copy(relationship.attributes),
+        relationships: copyRelationships(relationship.relationships)
+      };
+
+      if (relationship.meta !== undefined) {
+        if (relationship.meta.toMany === true) {
+          typeObj.toMany = true;
+        }
+
+        if (typeof relationship.meta.constraint === 'object' && relationship.meta.constraint !== null) {
+          typeObj.constraint = relationship.meta.constraint.resource;
+        }
+      }
+
+      typeScope = Object.freeze(typeObj);
 
       typeScopeList.push(typeScope);
       parseTypescopes(relationship.relationships, path + '/' + key, typeScope, typeScopeList);

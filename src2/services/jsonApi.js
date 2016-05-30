@@ -21,7 +21,7 @@ function jamJsonApi() {
   // --- format ---------------------
   // --------------------------------
 
-  function format(data, type, op, constrain, parentId) {
+  function format(data, type, op, constraint, parentId) {
     op = op || 'add';
     var obj = {};
 
@@ -40,9 +40,12 @@ function jamJsonApi() {
       obj.data = angular.copy(data);
     }
 
-    if (constrain === true) {
+    if (constraint !== undefined) {
       obj.meta = {
-        parentId: parentId
+        constraint: {
+          id: parentId,
+          resource: constraint
+        }
       };
     }
 
@@ -73,6 +76,8 @@ function jamJsonApi() {
     var included;
     var type;
     var obj;
+    var relationshipKeys;
+    var relationshipKey;
 
     if (data === undefined) { return undefined; }
 
@@ -94,6 +99,16 @@ function jamJsonApi() {
         writable: false,
         value: getTypescope(type, typeScopes)
       });
+
+      // default relationship object/array
+      if (obj.typescope.relationships) {
+        relationshipKeys = Object.keys(obj.typescope.relationships);
+        relationshipKey = relationshipKeys.pop();
+        while (relationshipKey !== undefined) {
+          obj[relationshipKey] = obj.typescope.relationships[relationshipKey].toMany === true ? [] : {};
+          relationshipKey = relationshipKeys.pop();
+        }
+      }
 
       included[type].push(angular.extend(obj, data[i].attributes));
 
@@ -129,6 +144,8 @@ function jamJsonApi() {
   // buildData(payload.data, payload.included, included, typeScopes);
   function buildData(data, payloadIncluded, includes, typeScopes, obj) {
     var popped;
+    var relationshipKeys;
+    var relationshipKey;
     var isArray = (data instanceof Array);
     if (obj === undefined && isArray === true) {
       obj = [];
@@ -153,6 +170,16 @@ function jamJsonApi() {
         writable: false,
         value: getTypescope(data.type, typeScopes)
       });
+
+      // default relationship object/array
+      if (obj.typescope.relationships) {
+        relationshipKeys = Object.keys(obj.typescope.relationships);
+        relationshipKey = relationshipKeys.pop();
+        while (relationshipKey !== undefined) {
+          obj[relationshipKey] = obj.typescope.relationships[relationshipKey].toMany === true ? [] : {};
+          relationshipKey = relationshipKeys.pop();
+        }
+      }
 
       // link relationships
       getRelationships(obj, data.relationships, payloadIncluded, includes);
@@ -230,189 +257,5 @@ function jamJsonApi() {
     }
 
     return null;
-  }
-
-
-
-
-
-
-
-  // --- Combine Scopes ----------------------
-
-  // TODO how do i add the typscops from the config that do not exist in the jsonapi
-  //      this will require relating parent scopes correctly
-  function combineTypescopes(main, sub) {
-    var i;
-    var length = sub.length;
-
-    // overide from user input
-    main = main.map(function (item) {
-      i = 0;
-      while (i < length) {
-        if (sub[i].map === item.map && sub[i].type === item.type) {
-          freeze(sub[i]);
-          return sub[i];
-        }
-
-        i += 1;
-      }
-
-      freeze(item);
-      return item;
-    });
-
-
-    // combine
-
-    if (main.length < sub.length) {
-      length = main.length;
-      sub.forEach(function (item) {
-        var isFound = false;
-        i = 0;
-        while (i < length) {
-          if (main[i].map === item.map && main[i].type === item.type) {
-            isFound = true;
-            break;
-          }
-
-          i += 1;
-        }
-
-        if (isFound === false) {
-          main.push(item);
-        }
-      });
-    }
-
-    return main;
-  }
-
-
-
-
-
-
-  // --- Build Scopes ----------------------
-
-
-  function buildTypescopes(payload) {
-    var keys;
-    var key;
-    var j;
-    var relationLength;
-    var parentScope;
-    var type;
-    var i = 0;
-    var data = [].concat(payload.data);
-    var length = payload.included !== undefined ? payload.included.length : 0;
-    var scopes = [];
-
-    // root scope
-    scopes.push({
-      map: '',
-      // TODO if data is an array then loop through it with the assumption that not all the types are the same
-      type: data[0].type,
-      urls: {
-        url: '/' + data[0].type
-      }
-    });
-
-    // root relations
-    keys = Object.keys(data[0].relationships || {});
-    key = keys.pop();
-
-    while (key !== undefined) {
-      type = getTypeFromRelation(data[0].relationships[key]);
-
-      if (containsScope(scopes, type) === false) {
-        parentScope = getScopeByType(scopes, data[0].type);
-        scopes.push({
-          map: (parentScope.map + '/' + key).replace(/^\//, ''),
-          prop: key,
-          type: type,
-          urls: {
-            // TODO can i use prop for the url?
-            url: '/' + key
-          },
-          parentScope: parentScope,
-          parentRelationshipMany: (data[0].relationships[key].data instanceof Array)
-        });
-      }
-
-      key = keys.pop();
-    }
-
-
-
-    // include relation scopes
-    while (i < length) {
-      if (payload.included[i].relationships !== undefined) {
-        keys = Object.keys(payload.included[i].relationships);
-        key = keys.pop();
-
-        while (key !== undefined) {
-          type = getTypeFromRelation(payload.included[i].relationships[key]);
-          if (containsScope(scopes, type) === false) {
-            parentScope = getScopeByType(scopes, payload.included[i].type);
-            if (parentScope !== undefined) {
-              scopes.push({
-                map: (parentScope.map + '/' + key).replace(/^\//, ''),
-                prop: key,
-                type: type,
-                urls: {
-                  // TODO can i use prop for the url?
-                  url: '/' + key
-                },
-                parentScope: parentScope,
-                parentRelationshipMany: (payload.included[i].relationships[key].data instanceof Array)
-              });
-            }
-          }
-
-          key = keys.pop();
-        }
-      }
-
-      i += 1;
-    }
-
-    return scopes;
-  }
-
-  function getTypeFromRelation(relation) {
-    if (relation.meta !== undefined && relation.meta.type !== undefined) {
-      return relation.meta.type;
-    }
-
-    if (relation.data instanceof Array && relation.data.length > 0) {
-      return relation.data[0].type;
-    } else if (typeof relation.data === 'object' && relation.data !== null) {
-      return relation.data.type;
-    }
-  }
-
-  function getScopeByType(arr, type) {
-    var i = 0;
-    var length = arr.length;
-
-    while (i < length) {
-      if (arr[i].type === type) { return arr[i]; }
-      i += 1;
-    }
-
-    return undefined;
-  }
-
-  function containsScope(arr, type) {
-    var i = 0;
-    var length = arr.length;
-
-    while (i < length) {
-      if (arr.type === type) { return true; }
-      i += 1;
-    }
-
-    return false;
   }
 }

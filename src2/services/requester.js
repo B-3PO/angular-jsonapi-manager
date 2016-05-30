@@ -53,7 +53,7 @@ function jamRequest($http, jamUtil, jamJsonApi) {
 
   function sendBatchItem(item, reverse, callback) {
     var op = getOP(item.op, reverse, item.singleResource);
-    
+
     request({
       method: getMethod(op),
       url: item.url,
@@ -102,8 +102,8 @@ function jamRequest($http, jamUtil, jamJsonApi) {
       return jamJsonApi.format(data, item.type, op);
     }
 
-    if (reverse === true) { return jamJsonApi.format(item.oldData, item.type, op, item.constrain, item.parentId); }
-    return jamJsonApi.format(item.data, item.type, op, item.constrain, item.parentId);
+    if (reverse === true) { return jamJsonApi.format(item.oldData, item.type, op, item.constraint, item.parentId); }
+    return jamJsonApi.format(item.data, item.type, op, item.constraint, item.parentId);
   }
 
 

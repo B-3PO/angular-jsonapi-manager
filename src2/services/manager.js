@@ -144,7 +144,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       var length = bindings.length;
 
       while (i < length) {
-        if (bindings[i].obj === obj && bindings[i].property === property) {
+        if (bindings[i].obj === obj && (property === undefined || bindings[i].property === property)) {
           // set bound property to undefined
           bindings[i].obj[bindings[i].property] = undefined;
 
@@ -203,7 +203,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     function getByType(type) {
       // if the type is the main type then return the full data
       if (type === options.typescopes[0].type) {
-        return data;
+        return options.data;
       }
 
       return options.included[type];

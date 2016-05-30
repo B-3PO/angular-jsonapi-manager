@@ -35,6 +35,8 @@ function jamPatch() {
     var newObj;
     var oldObj;
     var key;
+    var typescope;
+    var prop;
 
     var newKeys = _objectKeys(newValue);
     var oldKeys = _objectKeys(oldValue);
