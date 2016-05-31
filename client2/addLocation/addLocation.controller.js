@@ -7,7 +7,7 @@ angular
 function AddJobController($scope, locationManager, $brDialog) {
   var vm = this;
 
-  // locationManager.registerScope($scope, [vm]);
+  locationManager.registerScope($scope, [vm]);
   locationManager.bind(vm, 'list');
   vm.location = {
     name: '',

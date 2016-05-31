@@ -21,6 +21,8 @@ function HomeController(jsonApiManager, $brDialog) {
   locationManager.bind(vm, 'people', 'people');
   locationManager.bind(vm, 'ben', 'people', '0b2973b2-a274-4bab-adda-7b74895fd154');
 
+  // locationManager.watch();
+
   locationManager.get(function (error) {
     if (error !== undefined) { console.log(error); }
     console.log(vm.data);

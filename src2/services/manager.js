@@ -51,7 +51,6 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       applyChanges: applyChanges,
       removeChanges: removeChanges,
       watch: watch,
-      killAllWatchers: killAllWatchers,
       destroy: destroy
     };
     return service;
@@ -291,51 +290,37 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     }
 
 
-    function killAllWatchers() {
-      var keys = Object.keys(watchers);
-      var key = keys.pop();
-
-      while (key !== undefined) {
-        watchers[key]();
-        key = keys.pop();
-      }
-
-      watchers = {};
-    }
-
 
     function watch(scope) {
-      var killer;
-      var id = watcherId.toString();
-      watcherId += 1;
+      if (options.watcher !== undefined) {
+        throw Error('You can only have one watcher at a time');
+      }
 
       if (typeof options.debounce !== 'function') {
         options.debounce = jamUtil.debounce(applyChanges, options.delay || jamKeys.DEFAULT_DEBOUNCE_TIME);
       }
 
-      killer = jamUtil.getWatcher(options);
-      watchers[id] = function () {
-        killer();
-        killer = undefined;
-      };
+      options.watcher = jamUtil.getWatcher(options);
 
       if (scope) {
-        scope.$on('$destroy', killWatcher);
+        scope.$on('$destroy', function () {
+          if (options === undefined || options.watcher === undefined) { return; }
+          options.watcher();
+          options.watcher = undefined;
+        });
       }
 
-      function killWatcher() {
-        if (watchers[id] !== undefined) {
-          watchers[id]();
-          delete watchers[id];
-        }
-      }
-
-      return killWatcher;
+      return function () {
+        if (options === undefined || options.watcher === undefined) { return; }
+        if (scope) { scope.$off('$destroy', options.watcher); }
+        options.watcher();
+        options.watcher = undefined;
+      };
     }
 
 
     function destroy() {
-      killAllWatchers();
+      if (options.watcher !== undefined) { options.watcher(); }
       unbindAll();
       options = undefined;
     }
