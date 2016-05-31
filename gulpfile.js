@@ -12,6 +12,7 @@ var uglify = require('gulp-uglify');
 var rename = require("gulp-rename");
 var stripDebug = require('gulp-strip-debug');
 var serve = require('gulp-serve');
+var bump = require('gulp-bump');
 
 
 
@@ -64,6 +65,29 @@ gulp.task('release', function () {
     .on('end', function () {
       gutil.log(gutil.colors.green('✔ Release'), 'Built');
     });
+});
+
+
+
+
+// --- Version Tasks ----
+
+gulp.task('major', function(){
+  gulp.src('./package.json')
+  .pipe(bump({type:'major'}))
+  .pipe(gulp.dest('./'));
+});
+
+gulp.task('minor', function(){
+  gulp.src('./package.json')
+  .pipe(bump({type:'minor'}))
+  .pipe(gulp.dest('./'));
+});
+
+gulp.task('patch', function(){
+  gulp.src('./package.json')
+  .pipe(bump())
+  .pipe(gulp.dest('./'));
 });
 
 
