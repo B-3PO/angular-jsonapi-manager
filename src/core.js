@@ -38,14 +38,14 @@ function jsonapiManagerProvider() {
       * @description Object of base headers to be used on all calls
       */
     headers: undefined,
-    $get: ['jamUtil', 'jamManager', 'jamRequest', jsonapiManagerService]
+    $get: ['jamUtil', 'jamManager', 'jamRequest', jsonApiManagerService]
   };
   return provider;
 
 
 
 
-  function jsonapiManagerService(jamUtil, jamManager, jamRequest) {
+  function jsonApiManagerService(jamUtil, jamManager, jamRequest) {
     jamRequest.baseUrl = provider.baseUrl;
 
     var service = {

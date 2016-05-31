@@ -50,7 +50,7 @@ gulp.task('clean', function () {
 
 // --- Release -------
 gulp.task('release', function () {
-  gulp.src([BASE + 'core.js', BASE + '*.js'])
+  gulp.src([BASE + 'core.js', BASE + '**/*.js'])
     .pipe(stripDebug())
     .pipe(wrap('(function(){"use strict";<%= contents %>}());'))
     .pipe(jshint())

@@ -249,7 +249,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     if (patch.newItem === true) {
       request.push({
         op: 'add',
-        url: options.url + '/' + value.id,
+        url: typescope.url + '/' + value.id,
         type: typescope.type,
         data: value,
         parentId: patch.parentId,

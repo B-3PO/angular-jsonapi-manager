@@ -17,6 +17,21 @@ function jamHandshaker(jamRequest, jamHistory, jamKeys, jamUtil) {
     var url = options.url;
     var version = jamHistory.getVersion(options.managerId);
 
+
+
+    // fake header call fi skipHandshake is passed as true
+    if (options.skipHandshake === true) {
+      jamHistory.clearVersions(options.managerId);
+      jamHistory.newVersion(options.managerId);
+      jamHistory.clear(options.managerId);
+      options.isVersioning = false; // tell manager there is no versioning
+      options.getNewData = true; // tell manager it needs to get new data
+      getStructure(options, callback);
+      return;
+    }
+
+
+
     // if no version exists then data must have been cleared
     // Remvoe any info to be safe and create a new version
     // this will garentee we get new data from server
@@ -68,6 +83,16 @@ function jamHandshaker(jamRequest, jamHistory, jamKeys, jamUtil) {
 
   function getStructure(options, callback) {
     var versionCacheBust = jamHistory.getVersion(options.managerId);
+
+
+
+    // if structure is passed in then don't get from server
+    if (typeof options.structure === 'object' && options.structure !== null) {
+      options.typescopes = jamUtil.buildTypeScopes(options, options.structure);
+      callback(undefined);
+      return;
+    }
+
 
     jamRequest.get(jamUtil.getCacheBustUrl(options.getUrl, versionCacheBust.cb), {'jam-get-structure': true}, function (error, response, headers) {
       if (error !== undefined) {
