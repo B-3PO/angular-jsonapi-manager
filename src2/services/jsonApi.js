@@ -3,7 +3,8 @@ angular
   .factory('jamJsonApi', jamJsonApi);
 
 
-function jamJsonApi() {
+jamJsonApi.$inject = ['jamUtil'];
+function jamJsonApi(jamUtil) {
   var getKeys = Object.keys;
   var freeze = Object.freeze;
   var defineProperty = Object.defineProperty;
@@ -100,15 +101,8 @@ function jamJsonApi() {
         value: getTypescope(type, typeScopes)
       });
 
-      // default relationship object/array
-      if (obj.typescope.relationships) {
-        relationshipKeys = Object.keys(obj.typescope.relationships);
-        relationshipKey = relationshipKeys.pop();
-        while (relationshipKey !== undefined) {
-          obj[relationshipKey] = obj.typescope.relationships[relationshipKey].toMany === true ? [] : {};
-          relationshipKey = relationshipKeys.pop();
-        }
-      }
+      // set relationships that are toMany(array) as empty arrays
+      jamUtil.defaultRelationships(obj, obj.typescope.relationships);
 
       included[type].push(angular.extend(obj, data[i].attributes));
 
@@ -171,15 +165,8 @@ function jamJsonApi() {
         value: getTypescope(data.type, typeScopes)
       });
 
-      // default relationship object/array
-      if (obj.typescope.relationships) {
-        relationshipKeys = Object.keys(obj.typescope.relationships);
-        relationshipKey = relationshipKeys.pop();
-        while (relationshipKey !== undefined) {
-          obj[relationshipKey] = obj.typescope.relationships[relationshipKey].toMany === true ? [] : {};
-          relationshipKey = relationshipKeys.pop();
-        }
-      }
+      // set relationships that are toMany(array) as empty arrays
+      jamUtil.defaultRelationships(obj, obj.typescope.relationships);
 
       // link relationships
       getRelationships(obj, data.relationships, payloadIncluded, includes);

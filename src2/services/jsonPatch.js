@@ -99,7 +99,11 @@ function jamPatch() {
           // NOTE : may need to check if is and abject and use delete
 
           // remove object/key and set the length and counter back
-          oldValue.splice(parseInt(oldKey), 1);
+          if (oldValue[oldKey] instanceof Array) {
+            oldValue.splice(parseInt(oldKey), 1);
+          } else {
+            delete oldValue[oldKey];
+          }
           oldKeys.splice(i, 1);
           i -= 1;
           oldLength -= 1;

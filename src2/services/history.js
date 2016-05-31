@@ -9,6 +9,7 @@ function jamHistory(jamUtil, jamStorage, jamKeys, jamPatch) {
     add: add,
     undo: undo,
     clear: clear,
+    clearVersions: clearVersions,
     getVersion: getVersion,
     newVersion: newVersion,
     updateVersion: updateVersion,
@@ -27,6 +28,14 @@ function jamHistory(jamUtil, jamStorage, jamKeys, jamPatch) {
     return date;
   }
 
+
+
+  // clear all previos version data for given manager id
+  // this should onyl be run if new info is going to be retrived from the server
+  // a new version should be created after this
+  function clearVersions(id) {
+    jamStorage.remove(jamKeys.VERSION_KEY + id);
+  }
 
   // return last version
   function getVersion(id) {
@@ -98,11 +107,12 @@ function jamHistory(jamUtil, jamStorage, jamKeys, jamPatch) {
 
     // reverse patch order
     }).reverse();
-
     // apply patched and set oldvalue
     jamPatch.apply(options.data, removed);
+    jamUtils.removeIncludes(removed, options.included);
     options.oldValue = angular.copy(options.data);
   }
+
 
 
   // remove item from history based on date
@@ -132,7 +142,6 @@ function jamHistory(jamUtil, jamStorage, jamKeys, jamPatch) {
 
 
   function clear(id) {
-    console.log(jamKeys.STORED_DATA_PREFIX + id);
     jamStorage.remove(jamKeys.STORED_DATA_PREFIX + id);
   }
 }

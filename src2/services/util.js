@@ -16,7 +16,9 @@ function jamUtil(jamStorage, jamKeys) {
     getTypeScope: getTypeScope,
     getId: getId,
     reversePatch: reversePatch,
-    getPatches: getPatches
+    getPatches: getPatches,
+    removeIncludes: removeIncludes,
+    defaultRelationships: defaultRelationships
   };
   return service;
 
@@ -91,13 +93,22 @@ function jamUtil(jamStorage, jamKeys) {
 
   // --- Revers Patch ----
   function reversePatch(patch) {
+    var reversePatch;
     var op = patch.op === 'add' ? 'remove' : patch.op === 'remove' ? 'add' : 'replace';
 
     if (op === 'remove') {
-      return {
+      reversePatch = {
         op: op,
         path: patch.path
       };
+
+      if (patch.newItem === true && typeof patch.value === 'object' && patch.value !== null && patch.value.id) {
+        reversePatch.newItem = true;
+        reversePatch.value = { id: patch.value.id };
+        reversePatch.type = patch.type;
+      }
+
+      return reversePatch;
     } else {
       return {
         op: op,
@@ -139,6 +150,58 @@ function jamUtil(jamStorage, jamKeys) {
     }
 
     return undefined;
+  }
+
+
+
+  // remove included based on patches
+  function removeIncludes(reversPatches, included) {
+    var patch = reversPatches.pop();
+
+    while (patch !== undefined) {
+      if (patch.op === 'remove' && patch.newItem === true) {
+        removeInclude(included, patch.type, patch.value.id);
+      }
+      patch = reversPatches.pop();
+    }
+  }
+
+
+  function removeInclude(included, type, id) {
+    var includedByType = included[type] || [];
+    var i = 0;
+    var length = includedByType.length || 0;
+
+    while (i < length) {
+      if (includedByType[i].id === id) {
+        includedByType.splice(i, 1);
+        return;
+      }
+      i += 1;
+    }
+  }
+
+
+
+
+  // --- Default relationships ---
+
+  function defaultRelationships(obj, relationships) {
+    var relationshipKeys;
+    var relationshipKey;
+
+    // default relationship object/array
+    if (relationships) {
+      relationshipKeys = Object.keys(relationships);
+      relationshipKey = relationshipKeys.pop();
+
+      while (relationshipKey !== undefined) {
+        if (relationships[relationshipKey].toMany === true && obj[relationshipKey] === undefined) {
+          obj[relationshipKey] = [];
+        }
+        relationshipKey = relationshipKeys.pop();
+      }
+    }
   }
 
 

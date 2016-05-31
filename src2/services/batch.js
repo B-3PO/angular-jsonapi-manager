@@ -179,7 +179,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     var value;
     var request = [];
     var typescope = jamUtil.getTypeScope(patch.path, patch.type, options.typescopes);
-    
+
     if (patch.type === undefined || patch.newItem === true) {
       patch.type = typescope.type;
       patch.newItem = true;
@@ -199,6 +199,9 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
           value: typescope
         });
       }
+
+      // set relationships that are toMany(array) as empty arrays
+      jamUtil.defaultRelationships(patch.valueReference, patch.valueReference.typescope.relationships);
 
       // if the item created is not the top layer then add it to the includes
       if (typescope.type !== options.typescopes[0].type) { addInclude(patch.valueReference, options.included); }

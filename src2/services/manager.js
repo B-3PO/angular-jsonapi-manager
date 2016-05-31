@@ -44,6 +44,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       get: get,
       bind: bind,
       unbind: unbind,
+      registerScope: registerScope,
       applyChanges: applyChanges,
       removeChanges: removeChanges
     };
@@ -101,7 +102,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
         options.data = parsedJsonApi.data;
         options.oldValue = angular.copy(parsedJsonApi.data);
-        options.included = parsedJsonApi.included;
+        options.included = parsedJsonApi.included || {};
 
         options.ready = true;
         updateAllBindings();
@@ -147,6 +148,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
         if (bindings[i].obj === obj && (property === undefined || bindings[i].property === property)) {
           // set bound property to undefined
           bindings[i].obj[bindings[i].property] = undefined;
+          bindings[i] = undefined;
 
           // remove from bindings list
           bindings.splice(i, 1);
@@ -211,6 +213,8 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
 
     function getTypeById(typeList, id) {
+      typeList = typeList || [];
+
       var i = 0;
       var length = typeList.length;
 
@@ -242,12 +246,26 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
     function removeChanges() {
       var patches = jamPatch.diff(options, true);
-
       if (patches.length > 0) {
         jamPatch.apply(options.data, patches);
-        // TODO remove/add includes that are effected
         updateAllBindings();
       }
+    }
+
+
+    function registerScope(scope, boundObjects, _removeChanges) {
+      if (typeof scope !== 'object' || scope === null || scope.$watch === undefined) {
+        throw Error('Must pass in a scope object');
+      }
+
+      boundObjects = boundObjects || [];
+
+      scope.$on('$destroy', function () {
+        unbind(scope);
+        // call unbind indirectly so the second param of forEach does not get passed
+        boundObjects.forEach(function (obj) { unbind(obj); });
+        if (_removeChanges !== false) { removeChanges(); }
+      });
     }
   }
 }

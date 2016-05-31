@@ -52,6 +52,7 @@ function jamHandshaker(jamRequest, jamHistory, jamKeys, jamUtil) {
       // if ther is no versioning or there are updates, then clear history
       // also create a new version for cache busting
       if (getUpdate === true) {
+        jamHistory.clearVersions(options.managerId);
         jamHistory.newVersion(options.managerId);
         jamHistory.clear(options.managerId);
       }
