@@ -7,6 +7,7 @@ angular
 function AddRoomController($scope, locationManager, locationId, $brDialog) {
   var vm = this;
 
+  locationManager.registerScope($scope, [vm]);
   locationManager.bind(vm, 'location', 'locations', locationId);
   vm.room = {
     name: '',
@@ -14,11 +15,6 @@ function AddRoomController($scope, locationManager, locationId, $brDialog) {
 
   vm.cancel = $brDialog.remove;
   vm.save = save;
-
-  $scope.$on('$destroy', function () {
-    locationManager.unbind(vm);
-    locationManager.removeChanges();
-  });
 
 
   function save() {

@@ -1,19 +1,18 @@
 angular
   .module('dataManagerApp')
-  .controller('AddPersonController', AddPersonController);
+  .controller('AddLocationController', AddJobController);
 
 
 
-function AddPersonController($scope, locationManager, locationId, $brDialog) {
+function AddJobController($scope, locationManager, $brDialog) {
   var vm = this;
 
-  locationManager.registerScope($scope, [vm]);
-  locationManager.bind(vm, 'location', 'locations', locationId);
-  vm.person = {
+  // locationManager.registerScope($scope, [vm]);
+  locationManager.bind(vm, 'list');
+  vm.location = {
     name: '',
-    age: 0,
-    email: '',
-    working: true
+    city: '',
+    state: ''
   };
 
   vm.cancel = $brDialog.remove;
@@ -22,7 +21,7 @@ function AddPersonController($scope, locationManager, locationId, $brDialog) {
 
   function save() {
     $brDialog.lock();
-    vm.location.people.push(angular.copy(vm.person));
+    vm.list.push(angular.copy(vm.location));
 
     locationManager.applyChanges(function (error) {
       $brDialog.unlock();

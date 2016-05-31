@@ -69,4 +69,14 @@ function HomeController(jsonApiManager, $brDialog) {
       controllerAs: 'vm'
     });
   };
+
+
+  vm.addLocation = function () {
+    $brDialog.add({
+      templateUrl: 'addLocation/addLocation.html',
+      locals: {locationManager: locationManager},
+      controller: 'AddLocationController',
+      controllerAs: 'vm'
+    });
+  };
 }

@@ -7,6 +7,7 @@ angular
 function AddJobController($scope, locationManager, personId, $brDialog) {
   var vm = this;
 
+  // locationManager.registerScope($scope, [vm]);
   locationManager.bind(vm, 'person', 'people', personId);
   vm.job = {
     title: '',
@@ -16,16 +17,11 @@ function AddJobController($scope, locationManager, personId, $brDialog) {
   vm.cancel = $brDialog.remove;
   vm.save = save;
 
-  $scope.$on('$destroy', function () {
-    locationManager.unbind(vm);
-    locationManager.removeChanges();
-  });
-
 
   function save() {
     $brDialog.lock();
     vm.person.job = angular.copy(vm.job);
-    
+
     locationManager.applyChanges(function (error) {
       $brDialog.unlock();
 
