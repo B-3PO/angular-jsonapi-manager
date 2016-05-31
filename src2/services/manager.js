@@ -34,7 +34,10 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
   function constructManager(options) {
     var inited = false;
     var waitingToGet = false;
+    var dataRetrieved = false;
     var watingGetCallback;
+    var watchers = {};
+    var watcherId = 1;
 
     var bindings = [];
 
@@ -46,7 +49,10 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       unbind: unbind,
       registerScope: registerScope,
       applyChanges: applyChanges,
-      removeChanges: removeChanges
+      removeChanges: removeChanges,
+      watch: watch,
+      killAllWatchers: killAllWatchers,
+      destroy: destroy
     };
     return service;
 
@@ -88,6 +94,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
           options.errored = true;
           return;
         }
+        dataRetrieved = true;
 
         options.original = angular.copy(response);
         var parsedJsonApi = jamJsonApi.parse(response, options.typescopes);
@@ -106,6 +113,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
         options.ready = true;
         updateAllBindings();
+
         if (typeof callback === 'function') { callback(undefined, options.data); }
       });
     }
@@ -139,6 +147,20 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       }
     }
 
+
+    function unbindAll() {
+      var i = 0;
+      var length = bindings.length;
+
+      while (i < length) {
+        // set bound property to undefined
+        bindings[i].obj[bindings[i].property] = undefined;
+        bindings[i] = undefined;
+        i += 1;
+      }
+
+      bindings = [];
+    }
 
     function unbind(obj, property) {
       var i = 0;
@@ -266,6 +288,56 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
         boundObjects.forEach(function (obj) { unbind(obj); });
         if (_removeChanges !== false) { removeChanges(); }
       });
+    }
+
+
+    function killAllWatchers() {
+      var keys = Object.keys(watchers);
+      var key = keys.pop();
+
+      while (key !== undefined) {
+        watchers[key]();
+        key = keys.pop();
+      }
+
+      watchers = {};
+    }
+
+
+    function watch(scope) {
+      var killer;
+      var id = watcherId.toString();
+      watcherId += 1;
+
+      if (typeof options.debounce !== 'function') {
+        options.debounce = jamUtil.debounce(applyChanges, options.delay || jamKeys.DEFAULT_DEBOUNCE_TIME);
+      }
+
+      killer = jamUtil.getWatcher(options);
+      watchers[id] = function () {
+        killer();
+        killer = undefined;
+      };
+
+      if (scope) {
+        scope.$on('$destroy', killWatcher);
+      }
+
+      function killWatcher() {
+        if (watchers[id] !== undefined) {
+          watchers[id]();
+          delete watchers[id];
+        }
+      }
+
+      return killWatcher;
+    }
+
+
+    function destroy() {
+      killAllWatchers();
+      unbindAll();
+      options = undefined;
     }
   }
 }

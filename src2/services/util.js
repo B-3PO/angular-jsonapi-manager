@@ -3,8 +3,8 @@ angular
   .factory('jamUtil', jamUtil);
 
 
-jamUtil.$inject = ['jamStorage','jamKeys'];
-function jamUtil(jamStorage, jamKeys) {
+jamUtil.$inject = ['jamStorage', 'jamKeys', '$rootScope'];
+function jamUtil(jamStorage, jamKeys, $rootScope) {
   var performance = window.performance ? angular.bind(window.performance, window.performance.now) : Date.now;
   var slice = Array.prototype.slice;
 
@@ -18,7 +18,9 @@ function jamUtil(jamStorage, jamKeys) {
     reversePatch: reversePatch,
     getPatches: getPatches,
     removeIncludes: removeIncludes,
-    defaultRelationships: defaultRelationships
+    defaultRelationships: defaultRelationships,
+    getWatcher: getWatcher,
+    debounce: debounce
   };
   return service;
 
@@ -202,6 +204,42 @@ function jamUtil(jamStorage, jamKeys) {
         relationshipKey = relationshipKeys.pop();
       }
     }
+  }
+
+
+  // --- get watcher ---
+  // setup watcher and return killer
+  function getWatcher(options) {
+    return $rootScope.$watch(
+      function () {
+        return options.data;
+      },
+      function (newValue, oldValue) {
+        // this avoids the initial fireing of the watcher
+        // the undfined check will avoid the watcher being called after data is retrieved from the server
+        if (newValue === oldValue || oldValue === undefined) {
+          return;
+        }
+
+        options.debounce();
+      }, true);
+  }
+
+
+
+  //--- debouncer ---
+  function debounce(func, wait) {
+    var timer;
+
+    return function debounced () {
+      var args = slice.call(arguments);
+
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        timer = undefined;
+        func.apply(this, args);
+      }, wait);
+    };
   }
 
 

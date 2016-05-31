@@ -7,7 +7,8 @@ angular
   .provider('jsonApiManager', jsonapiManagerProvider)
   .constant('jamKeys', {
     VERSION_KEY: '_jamVersions',
-    STORED_DATA_PREFIX: '_jamData_'
+    STORED_DATA_PREFIX: '_jamData_',
+    DEFAULT_DEBOUNCE_TIME: 200
   });
 
 
