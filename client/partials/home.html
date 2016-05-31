@@ -1,127 +1,107 @@
-<div class="header">
-    <div class="header-content">
-      Data Manager
-    </div>
-</div>
+<h2>Json Api Data Manager</h2>
 
-<button type="button" ng-click="vm.cancelChanges()" style="padding: 12px; margin: 8px;">Cancel Changes</button>
+<br-button class="br-primary" ng-click="vm.applyChanges()">Apply Changes</br-button>
+<br-button class="br-warn" ng-click="vm.removeChanges()">Remove Changes</br-button>
+<br-button class="br-raised br-accent" ng-click="vm.addLocation()">Add Location</br-button>
+
+<div>{{vm.ben.name}}</div>
+
+<h4>Locations</h4>
+
+<div ng-repeat="location in vm.data">
+  <br-expander br-watch-height>
+    <br-expander-header style="background: #eee7e7; border-bottom: 1px solid #DDD;">
+      <div layout="row" layout-align="center center" style="padding-left: 12px;">
+        <span style="padding-right: 4px; font-weight: 500;">Location:</span>
+        {{location.name}}
+      </div>
+    </br-expander-header>
+
+    <br-expander-content>
+
+      <div layout="column" style="padding: 20px;">
+        <div layout="row">
+          <br-input>
+            <label>Name</label>
+            <input ng-model="location.name" />
+          </br-input>
+
+          <br-input>
+            <label>City</label>
+            <input ng-model="location.city" />
+          </br-input>
+
+          <br-input>
+            <label>State</label>
+            <input ng-model="location.state" />
+          </br-input>
+        </div>
 
 
-<div class="data-container" style="background: #EEE">
-  <h3>Locations</h3>
-  <div ng-repeat="location in vm.locations track by location.id">
 
-    <!-- create location -->
-    <div ng-if="$index === 0" style="padding: 6px; margin-top: 12px; margin-bottom: 28px; border: 1px solid #AAA;">
-      <div>Create Location</div>
-      <div>
-        <input ng-model="vm.locationInfo.name" placeholder="name" />
+        <h5>Rooms</h5>
+        <br-button class="br-raised br-primary" ng-click="vm.addRoom(location)">Add Room</br-button>
+        <br-list>
+          <br-item ng-repeat="room in location.rooms">
+            <br-item-content>
+              <br-input flex>
+                <label>Name</label>
+                <input ng-model="room.name" />
+              </br-input>
+            </br-item-content>
+          </br-item>
+        </br-list>
+
+
+        <h5>People</h5>
+        <br-button class="br-raised br-primary" ng-click="vm.addPerson(location)">Add Person</br-button>
+        <br-list>
+          <br-item ng-repeat="people in location.people">
+            <br-item-content>
+
+              <div layout="row">
+                <br-input flex>
+                  <label>Name</label>
+                  <input ng-model="people.name" />
+                </br-input>
+
+                <br-input flex>
+                  <label>Age</label>
+                  <input ng-model="people.age" />
+                </br-input>
+
+                <br-input flex>
+                  <label>Email</label>
+                  <input ng-model="people.email" />
+                </br-input>
+              </div>
+
+
+              <h5>Job</h5>
+
+              <div ng-if="people.job" style="padding: 20px; padding-bottom: 42px;">
+                <div layout="row">
+                  <br-input flex>
+                    <label>Title</label>
+                    <input ng-model="people.job.title" />
+                  </br-input>
+
+                  <br-input flex>
+                    <label>Pay</label>
+                    <input ng-model="people.job.pay" />
+                  </br-input>
+                </div>
+              </div>
+
+              <div ng-if="!people.job" style="padding-bottom: 42px;">
+                <br-button class="br-raised br-primary" ng-click="vm.addJob(people)">Add Job</br-button>
+              </div>
+
+            </br-item-content>
+          </br-item>
+        </br-list>
       </div>
 
-      <div>
-        <input ng-model="vm.locationInfo.city" placeholder="city" />
-      </div>
-
-      <div>
-        <input ng-model="vm.locationInfo.state" placeholder="state" />
-      </div>
-      <button type="button" ng-click="vm.addLocation()">Create</button>
-    </div>
-
-
-
-    <!-- locations -->
-    <button type="button" ng-click="vm.update()">Update</button>
-    <button type="button" ng-click="vm.deleteLocation(location.id)">Delete</button>
-
-    <div>{{location.id}}</div>
-    <div>
-      <label class="set-width-label">Name</label>
-      <input ng-model="location.name" />
-    </div>
-
-    <div>
-      <label class="set-width-label">City</label>
-      <input ng-model="location.city" />
-    </div>
-
-    <div>
-      <label class="set-width-label">State</label>
-      <input ng-model="location.state" />
-    </div>
-
-
-
-
-
-    <div style="padding-left: 18px; padding-top: 24px; background: #DDD;">
-      <h4 style="margin-bottom: 12px;">People</h4>
-      <div ng-repeat="person in location.people track by person.id" style="padding-left:20px; margin-bottom: 20px; border-bottom: 1px solid #CCC;">
-
-        <!-- create person -->
-        <div ng-if="$index === 0" style="padding: 6px; margin-top: 12px; margin-bottom: 28px; border: 1px solid #AAA;">
-          <div>Create Person</div>
-          <div>
-            <input ng-model="vm.personInfo.name" placeholder="name" />
-          </div>
-
-          <div>
-            <input ng-model="vm.personInfo.age" placeholder="age" />
-          </div>
-
-          <div>
-            <input ng-model="vm.personInfo.email" placeholder="email" />
-          </div>
-          <button type="button" ng-click="vm.addPerson(location.id)">Create</button>
-        </div>
-
-
-
-        <!-- persons -->
-        <button type="button" ng-click="vm.update()">Update</button>
-        <button type="button" ng-click="vm.deletePerson(location.id, person.id)">Delete</button>
-
-        <div>{{location.id}}</div>
-
-        <div>
-          <label class="set-width-label">Name</label>
-          <input ng-model="person.name" />
-        </div>
-
-        <div>
-          <label class="set-width-label">Age</label>
-          <input ng-model="person.age" />
-        </div>
-
-        <div>
-          <label class="set-width-label">Email</label>
-          <input ng-model="person.email" />
-        </div>
-
-
-
-
-        <div style="padding-left: 18px; padding-top: 24px; padding-bottom: 24px; background: #CCC">
-          <h4 style="margin-bottom: 0; margin-top: 0;">Job</h4>
-          <div style="padding-left:20px">
-            <button ng-if="person.job.id === undefined" type="button" ng-click="vm.update()">Create</button>
-            <button ng-if="person.job.id !== undefined" type="button" ng-click="vm.update()">Update</button>
-            <button type="button" ng-click="vm.deleteJob(person.job.id)">Delete</button>
-
-            <div>{{person.job.id}}</div>
-
-            <div>
-              <label class="set-width-label">Title</label>
-              <input ng-model="person.job.title" />
-            </div>
-
-            <div>
-              <label class="set-width-label">Pay</label>
-              <input ng-model="person.job.pay" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    </br-expander-content>
+  </br-expander>
 </div>

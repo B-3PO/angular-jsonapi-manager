@@ -15,13 +15,13 @@ var serve = require('gulp-serve');
 
 
 
-var BASE = 'src2/';
+var BASE = 'src/';
 var paths = {
   scripts: [BASE + '*.js', BASE + '**/*.js'],
-  clientScripts: ['!client2/modules/**/*.js', 'client2/app.js', 'client2/*.js', 'client2/**/*.js'],
-  index: ['client2/index.html'],
-  partials: ['client2/**/*.html'],
-  css: ['client2/style.css']
+  clientScripts: ['!client/modules/**/*.js', 'client/app.js', 'client/*.js', 'client/**/*.js'],
+  index: ['client/index.html'],
+  partials: ['client/**/*.html'],
+  css: ['client/style.css']
 };
 
 
@@ -75,7 +75,7 @@ gulp.task('release', function () {
 
 gulp.task('build', function () {
 
-  gulp.src(['client2/angular/*.js'])
+  gulp.src(['client/angular/*.js'])
     .pipe(gulp.dest('public/angular/'))
     .on('end', function () {
 
@@ -96,7 +96,7 @@ gulp.task('build', function () {
             .pipe(gulp.dest('public/stylesheets'));
 
           // modules
-          gulp.src('client2/modules/**')
+          gulp.src('client/modules/**')
             .pipe(gulp.dest('public/modules'));
 
           // inject index

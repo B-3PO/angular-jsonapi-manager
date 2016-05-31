@@ -5,95 +5,80 @@ angular
 
 
 
-HomeController.$inject = ['jsonapiManager', '$timeout'];
-function HomeController(jsonapiManager, $timeout) {
+HomeController.$inject = ['jsonApiManager', '$brDialog'];
+function HomeController(jsonApiManager, $brDialog) {
   var vm = this;
 
-  var locationManager = jsonapiManager.create({
-    url: '/locations',
-    include: ['people', 'people.job']
+  var locationManager = jsonApiManager.create({
+    url: 'locations',
+    include: ['people', 'people.job', 'rooms']
+  }, function (error) {
+    console.log(error);
   });
 
 
-  vm.locations = [];
-  vm.locationInfo = {
-    name: '',
-    city: '',
-    state: ''
-  };
-  vm.personInfo = {
-    name: '',
-    age: '',
-    email: ''
-  };
+  locationManager.bind(vm, 'data');
+  locationManager.bind(vm, 'people', 'people');
+  locationManager.bind(vm, 'ben', 'people', '0b2973b2-a274-4bab-adda-7b74895fd154');
 
+  // locationManager.watch();
 
-  vm.addLocation = addLocation;
-  vm.addPerson = addPerson;
-  vm.deleteLocation = deleteLocation;
-  vm.deletePerson = deletePerson;
-  vm.update = locationManager.applyChanges;
-  vm.cancelChanges = locationManager.removeChanges;
-
-
-
-
-
-  locationManager.get(function (data) {
-    vm.locations = data;
+  locationManager.get(function (error) {
+    if (error !== undefined) { console.log(error); }
+    console.log(vm.data);
+    console.log(vm.ben);
+    console.log(vm.people);
+    locationManager.unbind(vm, 'people');
+    console.log(vm.people);
   });
 
 
-
-
-  function addLocation() {
-    vm.locations.push({
-      name: vm.locationInfo.name,
-      city: vm.locationInfo.city,
-      state: vm.locationInfo.state
+  vm.applyChanges = function () {
+    locationManager.applyChanges(function (error) {
+      console.log(error);
     });
-    vm.update();
-  }
+  };
+
+  vm.removeChanges = function () {
+    locationManager.removeChanges();
+  };
 
 
-  function addPerson(locationId) {
-    locationManager.getType('locations', locationId).people.push({
-      name: vm.personInfo.name,
-      age: vm.personInfo.age,
-      email: vm.personInfo.email
+
+  vm.addJob = function (person) {
+    $brDialog.add({
+      templateUrl: 'addJob/addJob.html',
+      locals: {locationManager: locationManager, personId: person.id},
+      controller: 'AddJobController',
+      controllerAs: 'vm'
     });
-    vm.update();
-  }
+  };
+
+  vm.addRoom = function (location) {
+    $brDialog.add({
+      templateUrl: 'addRoom/addRoom.html',
+      locals: {locationManager: locationManager, locationId: location.id},
+      controller: 'AddRoomController',
+      controllerAs: 'vm'
+    });
+  };
+
+  vm.addPerson = function (location) {
+    $brDialog.add({
+      templateUrl: 'addPerson/addPerson.html',
+      locals: {locationManager: locationManager, locationId: location.id},
+      controller: 'AddPersonController',
+      controllerAs: 'vm'
+    });
+  };
 
 
-  function deleteLocation(locationId) {
-    var i = 0;
-    var length = vm.locations.length;
-
-    while (i < length) {
-      if (vm.locations[i].id === locationId) {
-        vm.locations.splice(i, 1);
-        vm.update();
-        return;
-      }
-      i += 1;
-    }
-  }
-
-
-  function deletePerson(locationId, personId) {
-    var i = 0;
-    var people = locationManager.getType('locations', locationId).people;
-    var length = people.length;
-
-    while (i < length) {
-      if (people[i].id === personId) {
-        people.splice(i, 1);
-        vm.update();
-        return;
-      }
-      i += 1;
-    }
-  }
-
+  vm.addLocation = function () {
+    $brDialog.add({
+      templateUrl: 'addLocation/addLocation.html',
+      locals: {locationManager: locationManager},
+      controller: 'AddLocationController',
+      controllerAs: 'vm'
+    });
+  };
 }
