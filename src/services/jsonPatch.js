@@ -120,7 +120,7 @@ function jamPatch() {
             id: oldObj.id !== undefined ? oldObj.id : undefined,
             type: typescope !== undefined ? typescope.type : undefined,
             oldData: deepClone(oldObj),
-            parentId: parentId
+            parentId: newValue.id
           });
         }
       }
@@ -151,7 +151,7 @@ function jamPatch() {
               value: deepClone(newObj),
               prop: prop,
               type: typescope !== undefined ? typescope.type : undefined,
-              parentId: parentId,
+              parentId: newValue.id,
               valueReference: newObj
             });
           }

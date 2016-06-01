@@ -230,7 +230,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     if (patch.parentId !== undefined && typescope.constraint === undefined) {
       request.push({
         op: 'relationship',
-        url: typescope.url,
+        url: typescope.parentScope.url + '/' + patch.parentId + '/relationships/' + typescope.url,
         data: {
           type: typescope.type,
           id: value.id

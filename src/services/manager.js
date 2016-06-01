@@ -80,17 +80,23 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
 
     function get(callback) {
+      callback = callback || angular.noop;
+
       if (inited === false) {
         waitingToGet = true;
         watingGetCallback = callback;
         return;
       }
 
-      getData(callback);
+      if (dataRetrieved === false) {
+        getData(callback);
+      } else {
+        reGet(callback);
+      }
     }
 
 
-    function getData(callback) {
+    function getData(callback, _typscopes) {
       var url = options.getUrl;
       var version = jamHistory.getVersion(options.managerId); // version is handled during handshake
 
@@ -100,8 +106,12 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
           options.errored = true;
           return;
         }
-        dataRetrieved = true;
 
+        dataRetrieved = true;
+        if (_typscopes !== undefined) {
+          options.typescopes = _typscopes;
+          jamHistory.clear(options.managerId);
+        }
         options.original = angular.copy(response);
         var parsedJsonApi = jamJsonApi.parse(response, options.typescopes);
 
@@ -120,7 +130,26 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
         options.ready = true;
         updateAllBindings();
 
-        if (typeof callback === 'function') { callback(undefined, options.data); }
+        callback(undefined, options.data);
+      });
+    }
+
+
+    // make head call to se if ther is new data from server
+    // only make get call if server is not versioning or the server specifies that it has new data
+    function reGet(callback) {
+      jamHandshaker.recheck(options, function (error, newData, typescopes) {
+        if (error !== undefined) {
+          errorCallback(error);
+          options.errored = true;
+          return;
+        }
+
+        if (newData === true) {
+          getData(callback, typescopes);
+        } else {
+          callback(undefined, options.data);
+        }
       });
     }
 
