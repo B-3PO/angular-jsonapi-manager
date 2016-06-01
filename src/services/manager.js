@@ -1,3 +1,9 @@
+/**
+  * @ngdoc module
+  * @name Manager
+  * @description
+  * Object returned when you call created
+  */
 angular
   .module('jsonApiManager')
   .factory('jamManager', jamManager);
@@ -78,7 +84,17 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
     // --- Get Data -----
 
-
+    /**
+     * @ngdoc method
+     * @name Manager#get
+     * @function
+     *
+     * @description
+     * get data from server
+     * if you call this more than once it will only get new data
+     *
+     * @param {function=} callback - function to be called when data is recieved. It will pass back any errors
+     */
     function get(callback) {
       callback = callback || angular.noop;
 
@@ -160,6 +176,21 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
     // --- Bind variables ----
 
+    /**
+     * @ngdoc method
+     * @name Manager#bind
+     * @function
+     *
+     * @description
+     * Bind data to property of an object
+     * You can optionally pass in a type to get all of a given type
+     * You can optionally pass in a id to get one of a given type
+     *
+     * @param {object} object - object that you will bind properties to. This will most likley be the scope or controller
+     * @param {string} property - string name of property to set variable on
+     * @param {string=} type - Pass in type name to get all of that type
+     * @param {string=} id - pass in an id to get a single object of a given type
+     */
     function bind(obj, property, type, id) {
       if (typeof obj !== 'object' || obj === null) {
         throw Error('jsonApipManager.bind() requires a object to be passed in as the first parameter');
@@ -197,6 +228,21 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       bindings = [];
     }
 
+
+
+
+
+    /**
+     * @ngdoc method
+     * @name Manager#unbind
+     * @function
+     *
+     * @description
+     * Unbind an entire object or a specific property
+     *
+     * @param {object} object - object that you will bind properties to. This will most likley be the scope or controller
+     * @param {string} property - string name of property to set variable on
+     */
     function unbind(obj, property) {
       var i = 0;
       var length = bindings.length;
@@ -291,6 +337,16 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
     // --- apply changes ----
 
+    /**
+     * @ngdoc method
+     * @name Manager#applyChanges
+     * @function
+     *
+     * @description
+     * Submit any changed made to server
+     *
+     * @param {function=} callback - function to be called when changes are applied. It will pass back any errors
+     */
     // will callback on complete and pass in error if one exists
     function applyChanges(callback) {
       jamBatch.add(options, function (error) {
@@ -301,6 +357,15 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     }
 
 
+
+    /**
+     * @ngdoc method
+     * @name Manager#removeChanges
+     * @function
+     *
+     * @description
+     * remove any changes made tht have not been submitted by applyChanges
+     */
     function removeChanges() {
       var patches = jamPatch.diff(options, true);
       if (patches.length > 0) {
@@ -310,6 +375,19 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     }
 
 
+
+    /**
+     * @ngdoc method
+     * @name Manager#registerScope
+     * @function
+     *
+     * @description
+     * Pass in a scope and an array of any other object you bound data to, and they will automatically be unbound when scope is destroyed
+     *
+     * @param {scope} scope - scope that will be watched for destroy
+     * @param {array} boundObjects - pass in any other bound object(Like the controller) to unbind on scope destroy
+     * @param {boolean=} removeChanges - By default when the scope is destroyed all changes not applied will get removed. Pass in false to not remove changes
+     */
     function registerScope(scope, boundObjects, _removeChanges) {
       if (typeof scope !== 'object' || scope === null || scope.$watch === undefined) {
         throw Error('Must pass in a scope object');
@@ -327,6 +405,19 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
 
 
+
+    /**
+     * @ngdoc method
+     * @name Manager#watch
+     * @function
+     *
+     * @description
+     * Create a watcher to have changes automatically applied. You can only have one watcher at a time
+     *
+     * @param {scope=} scope - pass in a scope to have watcher killed on scope destroy
+     *
+     * @return {function} - A function that will kill the watcher when called
+     */
     function watch(scope) {
       if (options.watcher !== undefined) {
         throw Error('You can only have one watcher at a time');
@@ -355,6 +446,14 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     }
 
 
+    /**
+     * @ngdoc method
+     * @name Manager#destroy
+     * @function
+     *
+     * @description
+     * Kill any watcher, unbind all data, set data to undefined
+     */
     function destroy() {
       if (options.watcher !== undefined) { options.watcher(); }
       unbindAll();

@@ -90,7 +90,6 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
         return;
       }
 
-      // TODO mark stored batch as complete. this will be used for offline mode
       batch.complete = true;
       batch.callback();
       nextBatch();
@@ -220,7 +219,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     // if item is child of a typescope then treat is as a relationship
 
     /**
-      * TODO figure out how to handle not calling the relationship on add
+      * TODO figure out how to handle not calling the relationship on add, this setup seems to work
       * NOTE cases to add relationship calls
       * - new item and no constraint
       * - existing item that is toMany(should disallow this)
@@ -306,6 +305,8 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
     var typescope = jamUtil.getTypeScope(patch.path, patch.type, options.typescopes);
 
     // TODO create better path for single object creation
+    // if no typscope exists then we assume the abject is new and will create a add request insteat
+    // the case where this will not apply is when adding an existing obj to a new relation
     if (patch.type === undefined && typescope !== undefined) {
       patch.type = typescope.type;
       patch.newItem = true;

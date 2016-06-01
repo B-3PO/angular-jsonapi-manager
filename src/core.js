@@ -54,15 +54,32 @@ function jsonapiManagerProvider() {
     return service;
 
 
-
-    function create(options, errorCallback) {
+    /**
+     * @ngdoc method
+     * @name jsonApiManager#create
+     * @function
+     *
+     * @description
+     * Create a new manager
+     * The manager will allow you to bind properties to data
+     * it will get and format date from the server. It will automate calles to the server
+     *
+     * @param {object} options - object containing options you can set
+     * @param {function=} callback - function to be called when manager has completed handshake with server. It will pass back any errors
+     * @param {string} options.url - url for the resource
+     * @param {id=} options.id - if you want to retrieve a single resource
+     * @param {array=} include - Array of string values for the data you want included with resource
+     *
+     * @return {manager} - json api manager object
+     */
+    function create(options, callback) {
       validateOptions(options);
       setupUrl(options);
 
       // create hex hash; used to refernce this manger
       options.managerId = jamUtil.hashString(options.url);
 
-      return jamManager.create(options, errorCallback);
+      return jamManager.create(options, callback);
     }
 
 
