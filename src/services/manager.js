@@ -58,10 +58,17 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
 
     function init() {
+      // defualt the data and includes so bindings can run
+      options.data = options.id ? {} : [];
+      options.oldValue = options.id ? {} : [];
+      options.included = {};
+
       inited = true;
       if (waitingToGet === true) {
         get(watingGetCallback);
         waitingToGet = false;
+      } else {
+        updateAllBindings();
       }
     }
 

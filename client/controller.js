@@ -23,14 +23,16 @@ function HomeController(jsonApiManager, $brDialog) {
 
   // locationManager.watch();
 
-  locationManager.get(function (error) {
-    if (error !== undefined) { console.log(error); }
-    console.log(vm.data);
-    console.log(vm.ben);
-    console.log(vm.people);
-    locationManager.unbind(vm, 'people');
-    console.log(vm.people);
-  });
+  vm.getData = function () {
+    locationManager.get(function (error) {
+      if (error !== undefined) { console.log(error); }
+      console.log(vm.data);
+      console.log(vm.ben);
+      console.log(vm.people);
+      locationManager.unbind(vm, 'people');
+      console.log(vm.people);
+    });
+  };
 
 
   vm.applyChanges = function () {
