@@ -157,19 +157,23 @@ function jamJsonApi(jamUtil) {
     // link object to attrs
     } else {
       obj = data.attributes || {};
-      obj.id = data.id;
-      defineProperty(obj, 'typescope', {
-        enumerable: false,
-        configurable: false,
-        writable: false,
-        value: getTypescope(data.type, typeScopes)
-      });
 
-      // set relationships that are toMany(array) as empty arrays
-      jamUtil.defaultRelationships(obj, obj.typescope.relationships);
+      // if no id then assume there is no data
+      if (data.id !== undefined) {
+        obj.id = data.id;
+        defineProperty(obj, 'typescope', {
+          enumerable: false,
+          configurable: false,
+          writable: false,
+          value: getTypescope(data.type, typeScopes)
+        });
 
-      // link relationships
-      getRelationships(obj, data.relationships, payloadIncluded, includes);
+        // set relationships that are toMany(array) as empty arrays
+        jamUtil.defaultRelationships(obj, obj.typescope.relationships);
+
+        // link relationships
+        getRelationships(obj, data.relationships, payloadIncluded, includes);
+      }
     }
 
     return obj;

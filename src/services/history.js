@@ -109,7 +109,7 @@ function jamHistory(jamUtil, jamStorage, jamKeys, jamPatch) {
     }).reverse();
     // apply patched and set oldvalue
     jamPatch.apply(options.data, removed);
-    jamUtils.removeIncludes(removed, options.included);
+    jamUtil.removeIncludes(removed, options.included);
     options.oldValue = angular.copy(options.data);
   }
 
