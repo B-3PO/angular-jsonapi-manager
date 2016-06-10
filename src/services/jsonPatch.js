@@ -62,7 +62,7 @@ function jamPatch() {
         // skip to next item if this one no longer exists
         if (oldObj === undefined) { continue; }
 
-        isObj = typeof oldObj === 'object';
+        isObj = typeof oldObj === 'object' && oldObj !== null;
         deleted = true; // if oldObj exists in newValue then this will be set to true
         j = 0;
 
@@ -85,11 +85,11 @@ function jamPatch() {
 
           // check for non object values
           // NOTE : these will be assumed to sit nested inside of an object with an id
+          } else if (oldObj === null && (typeof newObj === 'object' && newObj !== null)) {
+            break;
+
           } else {
-            if (oldObj === newObj) {
-              deleted = false;
-              break;
-            }
+            deleted = false;
           }
         }
 
@@ -99,7 +99,7 @@ function jamPatch() {
           // NOTE : may need to check if is and abject and use delete
 
           // remove object/key and set the length and counter back
-          if (oldValue[oldKey] instanceof Array) {
+          if (oldValue instanceof Array) {
             oldValue.splice(parseInt(oldKey), 1);
           } else {
             delete oldValue[oldKey];
@@ -137,12 +137,25 @@ function jamPatch() {
           if (oldValue[key] === undefined) {
             newObj = newValue[key];
 
-            if (typeof newObj === 'object' && newObj !== null) {
+            if (newObj instanceof Array) {
+              typescope = undefined;
+              prop = escapePath(key);
+            } else if (typeof newObj === 'object' && newObj !== null) {
               typescope = newObj.typescope;
               prop = undefined;
             } else {
-              typescope = undefined;
-              prop = escapePath(key);
+              patches.push({
+                op: 'replace',
+                path: path + '/' + escapePath(key),
+                value: deepClone(newObj),
+                valueReference: newObj,
+                id: newValue.id !== undefined ? newValue.id : undefined,
+                type: newValue.typescope !== undefined ? newValue.typescope.type : undefined,
+                prop: escapePath(key),
+                oldData: deepClone(oldObj),
+                parentId: parentId
+              });
+              break;
             }
 
             patches.push({
