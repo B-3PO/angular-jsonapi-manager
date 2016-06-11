@@ -245,6 +245,11 @@ function jamPatch() {
         key = keys[j];
         j += 1;
 
+        
+        if (obj === undefined) {
+          break;
+        }
+
 
         if (key === undefined && j >= keyLength) {
           if (patch.op === 'replace') {

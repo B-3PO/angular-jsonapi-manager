@@ -93,12 +93,12 @@ function jamRequest($http, jamUtil, jamJsonApi) {
     if (op === 'relationship' || op === 'removeRelationship') {
       if (reverse === true) {
         // nest data in array of the relationship is toMany
-        data = item.many ? [].concat(item.oldData) : item.oldData;
+        data = item.toMany ? [].concat(item.oldData) : item.oldData;
         return jamJsonApi.format(data, item.type, op);
       }
 
       // nest data in array of the relationship is toMany
-      data = item.many ? [].concat(item.data) : item.data;
+      data = item.toMany ? [].concat(item.data) : item.data;
       return jamJsonApi.format(data, item.type, op);
     }
 

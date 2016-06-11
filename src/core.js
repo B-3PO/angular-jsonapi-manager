@@ -74,23 +74,10 @@ function jsonapiManagerProvider() {
      */
     function create(options, callback) {
       validateOptions(options);
-      setupUrl(options);
-
-      // create hex hash; used to refernce this manger
-      options.managerId = jamUtil.hashString(options.url);
 
       return jamManager.create(options, callback);
     }
 
-
-
-    function setupUrl(options) {
-      options.getUrl = options.url;
-      if (options.id !== undefined) { options.getUrl += '/' + options.id; }
-      if (options.include instanceof Array && options.include.length > 0) {
-        options.getUrl += '?include=' + options.include.join(',');
-      }
-    }
 
     function validateOptions(options) {
       if (typeof options === 'undefined') {

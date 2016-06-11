@@ -11,11 +11,85 @@ function jamJsonApi(jamUtil) {
 
   var service = {
     parse: parse,
-    format: format
+    format: format,
+    combineData: combineData
   };
   return service;
 
 
+
+  function combineData(oldData, newData, singleResource) {
+    var combinedData = {};
+
+    if (oldData === undefined) {
+      if (singleResource !== true && !(newData.data instanceof Array)) {
+        newData.data = newData.data === null ? [] : [angular.copy(newData.data)];
+      }
+
+      return newData;
+    }
+
+    // combine data
+    if (oldData.data instanceof Array || newData.data instanceof Array) {
+      combinedData.data = combineToArray(oldData.data, newData.data);
+    } else {
+      combinedData.data = combineToObject(oldData.data, newData.data);
+    }
+
+    if (singleResource !== true && !(combinedData.data instanceof Array)) {
+      combinedData.data = combinedData.data === null ? [] : [angular.copy(combinedData.data)];
+    }
+
+    // combine included data
+    combinedData.included = combineToArray(oldData.included, newData.included);
+
+    return combinedData;
+  }
+
+
+  function combineToObject(oldData, newData) {
+    if (oldData === null) { return newData; }
+    if (newData === null) { return oldData; }
+
+    if (oldData.id === newData.id) {
+      return newData;
+    } else {
+      var arr = [];
+      arr.push(oldData, newData);
+      return arr;
+    }
+  }
+
+
+  function combineToArray(oldData, newData) {
+    if (oldData === undefined || oldData === null || oldData.length === 0) {
+      if (newData === undefined || newData === null) { return []; }
+      else { return [].concat(newData); }
+    }
+    if (newData === undefined || newData === null) { return oldData; }
+
+
+    var i;
+    var combinedArray = [].concat(oldData).concat(newData);
+    var index = 0;
+    var length = combinedArray.length;
+
+    combinedArray = combinedArray.filter(function (item) {
+      index += 1;
+      i = index;
+      while (i < length) {
+        if (item.id === combinedArray[i].id) {
+          return false;
+        }
+
+        i += 1;
+      }
+
+      return true;
+    });
+
+    return combinedArray;
+  }
 
 
 
@@ -60,8 +134,14 @@ function jamJsonApi(jamUtil) {
   // --- Parse ----------------------
   // --------------------------------
 
-
   function parse(payload, typeScopes) {
+    if (payload.data === null || (payload.data instanceof Array && payload.data.length === 0)) {
+      return {
+        data: payload.data === null ? null : [],
+        included: {}
+      };
+    }
+
     var included = organizeIncluded(payload.included, typeScopes);
 
     return {

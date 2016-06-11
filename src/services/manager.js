@@ -19,6 +19,10 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
 
   function create(options, errorCallback) {
+    options.getUrl = createGetUrl(options.url, options.id, options.include);
+    // create hex hash; used to refernce this manger
+    options.managerId = jamUtil.hashString(options.getUrl);
+
     var manager = constructManager(options);
 
     // maek handshake with server and get structure data to build typescopes
@@ -36,12 +40,24 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     return manager;
   }
 
+  function createGetUrl(url, id, include) {
+    var getUrl = url;
+    if (id !== undefined) { getUrl += '/' + id; }
+    if (include instanceof Array && include.length > 0) {
+      getUrl += '?include=' + include.join(',');
+    }
+
+    return getUrl;
+  }
+
 
   function constructManager(options) {
     var inited = false;
     var waitingToGet = false;
+    var waitingToGetId;
     var dataRetrieved = false;
     var watingGetCallback;
+    var watingGetIdCallback;
     var watchers = {};
     var watcherId = 1;
 
@@ -51,6 +67,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
     var service = {
       $$init: init,
       get: get,
+      getById: getById,
       bind: bind,
       unbind: unbind,
       registerScope: registerScope,
@@ -73,6 +90,9 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       if (waitingToGet === true) {
         get(watingGetCallback);
         waitingToGet = false;
+      } else if (waitingToGetId !== undefined) {
+        getById(waitingToGetId, watingGetIdCallback);
+        waitingToGetId = undefined;
       } else {
         updateAllBindings();
       }
@@ -109,6 +129,64 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
       } else {
         reGet(callback);
       }
+    }
+
+
+    function getById(id, callback) {
+      callback = callback || angular.noop;
+
+      if (options.id !== undefined) {
+        throw Error('jsonApiManager.getById() You can only get a resource by id if you did not specify one in the create options');
+      }
+
+      if (inited === false) {
+        waitingToGetId = id;
+        watingGetIdCallback = callback;
+        return;
+      }
+
+
+      if (dataRetrieved === false) {
+        getDataById(id, callback);
+      } else {
+        reGet(callback, id);
+      }
+    }
+
+    function getDataById(id, callback) {
+      var getUrl = createGetUrl(options.url, id, options.include);
+      var version = jamHistory.getVersion(options.managerId); // version is handled during handshake
+
+      jamRequest.get(jamUtil.getCacheBustUrl(getUrl, version.cb + '_data'), function (error, response) {
+        if (error !== undefined) {
+          callback(error);
+          options.errored = true;
+          return;
+        }
+
+        var combinedResponse = jamJsonApi.combineData(options.original, response, options.id !== undefined);
+
+        options.original = angular.copy(combinedResponse);
+        var parsedJsonApi = jamJsonApi.parse(combinedResponse, options.typescopes);
+
+        // NOTE i may need to do a seperate check for changes
+        if (options.getNewData === false || dataRetrieved === true) {
+          var patches = jamUtil.getPatches(options.managerId);
+          if (patches !== undefined) {
+            jamPatch.apply(parsedJsonApi.data, patches);
+          }
+        }
+
+
+        options.data = parsedJsonApi.data;
+        options.oldValue = angular.copy(parsedJsonApi.data);
+        options.included = parsedJsonApi.included || {};
+
+        options.ready = true;
+        updateAllBindings();
+
+        callback(undefined, parsedJsonApi.data);
+      });
     }
 
 
@@ -153,7 +231,7 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
 
     // make head call to se if ther is new data from server
     // only make get call if server is not versioning or the server specifies that it has new data
-    function reGet(callback) {
+    function reGet(callback, byId) {
       jamHandshaker.recheck(options, function (error, newData, typescopes) {
         if (error !== undefined) {
           errorCallback(error);
@@ -162,7 +240,11 @@ function jamManager(jamHandshaker, jamRequest, jamUtil, jamJsonApi, jamStorage, 
         }
 
         if (newData === true) {
-          getData(callback, typescopes);
+          if (byId !== undefined) {
+            getDataById(byId, callback);
+          } else {
+            getData(callback, typescopes);
+          }
         } else {
           callback(undefined, options.data);
         }

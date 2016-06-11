@@ -230,6 +230,7 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
       request.push({
         op: 'relationship',
         url: typescope.parentScope.url + '/' + patch.parentId + '/relationships/' + typescope.url,
+        toMany: typescope.toMany || false,
         data: {
           type: typescope.type,
           id: value.id
@@ -256,7 +257,6 @@ function jamBatch(jamPatch, jamUtil, jamRequest, jamHistory) {
         precedence: getPrecedence(typescope, 0) // precedence for add calls. smallest first
       });
     }
-
 
     return request;
   }

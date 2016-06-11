@@ -5,15 +5,15 @@ angular
 
 
 
-HomeController.$inject = ['jsonApiManager', '$brDialog'];
-function HomeController(jsonApiManager, $brDialog) {
+HomeController.$inject = ['$scope', 'jsonApiManager', '$brDialog'];
+function HomeController($scope, jsonApiManager, $brDialog) {
   var vm = this;
 
   var locationManager = jsonApiManager.create({
     url: 'locations',
     include: ['people', 'people.job', 'rooms']
   }, function (error) {
-    console.log(error);
+    console.log('error', error);
   });
 
 
@@ -21,16 +21,21 @@ function HomeController(jsonApiManager, $brDialog) {
   locationManager.bind(vm, 'people', 'people');
   locationManager.bind(vm, 'ben', 'people', '0b2973b2-a274-4bab-adda-7b74895fd154');
 
-  // locationManager.watch();
+
+  // NOTE call for individual resources by id
+  //      This currently is only allowed on managers that do not have an id specified
+  // locationManager.getById('9d16411c-fe77-11e5-86aa-5e5517507c66', function (error, data) {
+  //   console.log(data);
+  // });
 
   vm.getData = function () {
     locationManager.get(function (error) {
       if (error !== undefined) { console.log(error); }
-      console.log(vm.data);
-      console.log(vm.ben);
-      console.log(vm.people);
+      // console.log(vm.data);
+      // console.log(vm.ben);
+      // console.log(vm.people);
       locationManager.unbind(vm, 'people');
-      console.log(vm.people);
+      // console.log(vm.people);
     });
   };
 
