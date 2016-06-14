@@ -1,11 +1,11 @@
 angular
-  .module('jsonapiManager')
-  .factory('dMLZString', LZStringService);
+  .module('jsonApiManager')
+  .factory('jamLZString', jamLZString);
 
 
 
 
-function LZStringService () {
+function jamLZString () {
 
   var service = {
     compressToUTF16: compressToUTF16,

@@ -1,0 +1,25 @@
+<div style="padding: 20px;">
+  <h2>Add Job</h2>
+
+  <div layout="row" layout-align="center center">
+    <br-input>
+      <label>Name</label>
+      <input ng-model="vm.location.name" />
+    </br-input>
+
+    <br-input>
+      <label>City</label>
+      <input ng-model="vm.location.city" />
+    </br-input>
+
+    <br-input>
+      <label>State</label>
+      <input ng-model="vm.location.state" />
+    </br-input>
+  </div>
+
+  <div layout="row" layout-align="center center">
+    <br-button class="br-warn" ng-click="vm.cancel()">Cancel</br-button>
+    <br-button class="br-primary" ng-click="vm.save()">Save</br-button>
+  </div>
+</div>
