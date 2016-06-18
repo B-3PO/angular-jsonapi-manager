@@ -11,7 +11,7 @@ function HomeController($scope, jsonApiManager, $brDialog) {
 
   var locationManager = jsonApiManager.create({
     url: 'locations',
-    include: ['people', 'people.job', 'rooms']
+    include: ['people', 'people.job', 'people.tester', 'rooms', 'tester']
   }, function (error) {
     console.log('error', error);
   });
@@ -87,5 +87,10 @@ function HomeController($scope, jsonApiManager, $brDialog) {
       controller: 'AddLocationController',
       controllerAs: 'vm'
     });
+  };
+
+  vm.addTester = function () {
+    vm.data[0].tester.push({name: 'hello'});
+    locationManager.applyChanges();
   };
 }

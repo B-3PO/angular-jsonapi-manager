@@ -90,11 +90,26 @@ dataManager.addType({
 
 
 
+dataManager.addType({
+  name: 'tester',
+  table: 'tester',
+  attributes: {
+    name: {dataType: dataManager.dataType.STRING}
+  }
+});
+
+
+
+
 app.use('/locations', dataManager.CreateResource({
   name: 'locations',
   type: 'locations',
   relationships: {
-    people: {resource: 'people'}
+    people: {resource: 'people'},
+    tester: {
+      resource: 'tester',
+      manyToMany: true
+    }
   }
 }));
 
@@ -102,11 +117,21 @@ app.use('/people', dataManager.CreateResource({
   name: 'people',
   type: 'people',
   relationships: {
-    job: {resource: 'job'}
+    job: {resource: 'job'},
+    tester: {
+      resource: 'tester',
+      manyToMany: true
+    }
   }
 }));
 
 app.use('/job', dataManager.CreateResource({
   name: 'job',
   type: 'jobs'
+}));
+
+
+app.use('/tester', dataManager.CreateResource({
+  name: 'tester',
+  type: 'tester'
 }));

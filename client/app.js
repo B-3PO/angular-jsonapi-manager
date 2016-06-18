@@ -18,6 +18,11 @@ function configApp($routeProvider, jsonApiManagerProvider) {
       controller: 'HomeController',
       controllerAs: 'vm'
     })
+    .when('/menus', {
+      templateUrl: 'partials/menus.html',
+      controller: 'MenusController',
+      controllerAs: 'vm'
+    })
     .otherwise({
       redirectTo: '/'
     });
