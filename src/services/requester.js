@@ -78,8 +78,8 @@ function jamRequest($http, jamUtil, jamJsonApi) {
 
   // use the correct method based on the operation
   function getMethod(op) {
-    if (op === 'add') { return 'PUT'; }
-    if (op === 'replace') { return 'PUT'; } // TODO change to POST
+    if (op === 'add') { return 'PATCH'; }
+    if (op === 'replace') { return 'POST'; }
     if (op === 'remove' || op === 'removeRelationship') { return 'DELETE'; }
     if (op === 'relationship') { return 'POST'; }
   }
