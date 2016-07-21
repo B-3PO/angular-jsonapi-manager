@@ -5,9 +5,29 @@ angular
 
 
 
-HomeController.$inject = ['$scope', 'jsonApiManager', '$brDialog'];
-function HomeController($scope, jsonApiManager, $brDialog) {
+HomeController.$inject = ['$scope', 'jsonApiManager'];
+function HomeController($scope, jsonApiManager) {
   var vm = this;
+
+  var jsonapiSchema = {
+
+  };
+}
+
+
+HomeController_old.$inject = ['$scope', 'jsonApiManager', '$brDialog', '$http'];
+function HomeController_old($scope, jsonApiManager, $brDialog, $http) {
+  var vm = this;
+
+
+  $http({
+    method: 'GET',
+    // url: 'http://localhost:4000/menus?include=categories.menuItems'
+    url: 'http://localhost:4000/menus?include=categories.menuItems,categories.taxGroups'
+  }).then(function (response) {
+    console.log(response.data);
+  });
+  return;
 
   var locationManager = jsonApiManager.create({
     url: 'locations',

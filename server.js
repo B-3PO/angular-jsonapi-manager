@@ -15,8 +15,7 @@ var ipaddress = '0.0.0.0';
 
 dataManager.addDatabase({
   host: '127.0.0.1',
-  user: 'tester',
-  password: 'testTester',
+  user: 'root',
   database: 'datamanager',
   connectionLimit: 10,
   default: true

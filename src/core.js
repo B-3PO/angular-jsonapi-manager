@@ -3,25 +3,25 @@
   * @name jsonApiManager
   */
 angular
-  .module('jsonApiManager', [])
-  .provider('jsonApiManager', jsonapiManagerProvider)
+  .module('jsonapi-manager', [])
+  .provider('jam', jamProvider)
   .constant('jamKeys', {
-    VERSION_KEY: '_jamVersions',
-    STORED_DATA_PREFIX: '_jamData_',
-    DEFAULT_DEBOUNCE_TIME: 200
+    // VERSION_KEY: '_jamVersions',
+    // STORED_DATA_PREFIX: '_jamData_',
+    // DEFAULT_DEBOUNCE_TIME: 200
   });
 
 
 
 /**
   * @ngdoc provider
-  * @name jsonApiManagerProvider
-  * @module jsonApiManager
+  * @name jamProvider
+  * @module jsonapi-manager
   *
   * @description
   * Edit Base settings for all managers
   */
-function jsonapiManagerProvider() {
+function jamProvider() {
   var provider = {
     /**
       * @ngdoc property
@@ -38,14 +38,14 @@ function jsonapiManagerProvider() {
       * @description Object of base headers to be used on all calls
       */
     headers: undefined,
-    $get: ['jamUtil', 'jamManager', 'jamRequest', jsonApiManagerService]
+    $get: ['jamRequest', 'jamManager', jamService]
   };
   return provider;
 
 
 
 
-  function jsonApiManagerService(jamUtil, jamManager, jamRequest) {
+  function jamService(jamRequest, jamManager) {
     jamRequest.baseUrl = provider.baseUrl;
 
     var service = {
