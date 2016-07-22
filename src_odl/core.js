@@ -3,25 +3,25 @@
   * @name jsonApiManager
   */
 angular
-  .module('jsonapi-manager', [])
-  .provider('jam', jamProvider)
+  .module('jsonApiManager', [])
+  .provider('jsonApiManager', jsonapiManagerProvider)
   .constant('jamKeys', {
-    // VERSION_KEY: '_jamVersions',
-    // STORED_DATA_PREFIX: '_jamData_',
-    // DEFAULT_DEBOUNCE_TIME: 200
+    VERSION_KEY: '_jamVersions',
+    STORED_DATA_PREFIX: '_jamData_',
+    DEFAULT_DEBOUNCE_TIME: 200
   });
 
 
 
 /**
   * @ngdoc provider
-  * @name jamProvider
-  * @module jsonapi-manager
+  * @name jsonApiManagerProvider
+  * @module jsonApiManager
   *
   * @description
   * Edit Base settings for all managers
   */
-function jamProvider() {
+function jsonapiManagerProvider() {
   var provider = {
     /**
       * @ngdoc property
@@ -38,25 +38,25 @@ function jamProvider() {
       * @description Object of base headers to be used on all calls
       */
     headers: undefined,
-    $get: ['jamRequest', 'jamManager', jamService]
+    $get: ['jamUtil', 'jamManager', 'jamRequest', jsonApiManagerService]
   };
   return provider;
 
 
 
 
-  function jamService(jamRequest, jamManager) {
+  function jsonApiManagerService(jamUtil, jamManager, jamRequest) {
     jamRequest.baseUrl = provider.baseUrl;
 
     var service = {
-      Create: Create
+      create: create
     };
     return service;
 
 
     /**
      * @ngdoc method
-     * @name jsonApiManager#Create
+     * @name jsonApiManager#create
      * @function
      *
      * @description
@@ -72,8 +72,21 @@ function jamProvider() {
      *
      * @return {manager} - json api manager object
      */
-    function Create(options, callback) {
-      return jamManager.Create(options, callback);
+    function create(options, callback) {
+      validateOptions(options);
+
+      return jamManager.create(options, callback);
+    }
+
+
+    function validateOptions(options) {
+      if (typeof options === 'undefined') {
+        throw Error('jsonApiManager.create() You must pass in options');
+      }
+
+      if (options.url === undefined) {
+        throw Error('jsonApiManager.create() requires a "url" options prameter');
+      }
     }
   }
 }

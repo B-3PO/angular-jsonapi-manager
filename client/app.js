@@ -3,14 +3,14 @@ angular
     'ngRoute',
     'ngAnimate',
     'brMaterial',
-    'jsonApiManager'
+    'jsonapi-manager'
   ])
   .config(configApp);
 
 
-configApp.$inject = ['$routeProvider', 'jsonApiManagerProvider'];
-function configApp($routeProvider, jsonApiManagerProvider) {
-  jsonApiManagerProvider.baseUrl = "http://localhost:4000/";
+configApp.$inject = ['$routeProvider', 'jamProvider'];
+function configApp($routeProvider, jamProvider) {
+  jamProvider.baseUrl = "http://localhost:4000/";
 
   $routeProvider
     .when('/', {

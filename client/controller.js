@@ -5,107 +5,51 @@ angular
 
 
 
-HomeController.$inject = ['$scope', 'jsonApiManager'];
-function HomeController($scope, jsonApiManager) {
+HomeController.$inject = ['$scope', 'jam', '$timeout'];
+function HomeController($scope, jam, $timeout) {
   var vm = this;
 
   var jsonapiSchema = {
-
+    type: 'locations',
+    relationships: {
+      menus: {
+        meta: {
+          toMany: true
+        },
+        type: 'menus',
+        relationships: {
+          categories: {
+            meta: {
+              toMany: true
+            },
+            type: 'categories'
+          }
+        },
+      }
+    }
   };
-}
 
-
-HomeController_old.$inject = ['$scope', 'jsonApiManager', '$brDialog', '$http'];
-function HomeController_old($scope, jsonApiManager, $brDialog, $http) {
-  var vm = this;
-
-
-  $http({
-    method: 'GET',
-    // url: 'http://localhost:4000/menus?include=categories.menuItems'
-    url: 'http://localhost:4000/menus?include=categories.menuItems,categories.taxGroups'
-  }).then(function (response) {
-    console.log(response.data);
-  });
-  return;
-
-  var locationManager = jsonApiManager.create({
-    url: 'locations',
-    include: ['people', 'people.job', 'rooms']
-  }, function (error) {
-    console.log('error', error);
+  var manager = jam.Create({
+    schema: jsonapiSchema,
+    url: 'locations'
   });
 
+  manager.registerScope($scope, true);
+  manager.bind($scope, 'locations');
+  manager.bind($scope, 'menus', 'menus');
+  manager.bind($scope, 'cat', 'categories', '2784472d-7b4d-47c2-be52-5b605f2dd401');
 
-  locationManager.bind(vm, 'data');
-  locationManager.bind(vm, 'people', 'people');
-  locationManager.bind(vm, 'ben', 'people', '0b2973b2-a274-4bab-adda-7b74895fd154');
+  manager.get(function (error) {
+    console.log($scope.locations);
+    console.log($scope.menus);
+    console.log($scope.cat);
+  });
 
-
-  // NOTE call for individual resources by id
-  //      This currently is only allowed on managers that do not have an id specified
-  // locationManager.getById('9d16411c-fe77-11e5-86aa-5e5517507c66', function (error, data) {
-  //   console.log(data);
-  // });
-
-  vm.getData = function () {
-    locationManager.get(function (error) {
-      if (error !== undefined) { console.log(error); }
-      // console.log(vm.data);
-      // console.log(vm.ben);
-      // console.log(vm.people);
-      locationManager.unbind(vm, 'people');
-      // console.log(vm.people);
+  $timeout(function () {
+    manager.getById('d4a22709-a19b-4261-9acf-589ad9456766', function (error) {
+      console.log($scope.locations);
+      console.log($scope.menus);
+      console.log($scope.cat);
     });
-  };
-
-
-  vm.applyChanges = function () {
-    locationManager.applyChanges(function (error) {
-      console.log(error);
-    });
-  };
-
-  vm.removeChanges = function () {
-    locationManager.removeChanges();
-  };
-
-
-
-  vm.addJob = function (person) {
-    $brDialog.add({
-      templateUrl: 'addJob/addJob.html',
-      locals: {locationManager: locationManager, personId: person.id},
-      controller: 'AddJobController',
-      controllerAs: 'vm'
-    });
-  };
-
-  vm.addRoom = function (location) {
-    $brDialog.add({
-      templateUrl: 'addRoom/addRoom.html',
-      locals: {locationManager: locationManager, locationId: location.id},
-      controller: 'AddRoomController',
-      controllerAs: 'vm'
-    });
-  };
-
-  vm.addPerson = function (location) {
-    $brDialog.add({
-      templateUrl: 'addPerson/addPerson.html',
-      locals: {locationManager: locationManager, locationId: location.id},
-      controller: 'AddPersonController',
-      controllerAs: 'vm'
-    });
-  };
-
-
-  vm.addLocation = function () {
-    $brDialog.add({
-      templateUrl: 'addLocation/addLocation.html',
-      locals: {locationManager: locationManager},
-      controller: 'AddLocationController',
-      controllerAs: 'vm'
-    });
-  };
+  }, 4000);
 }
