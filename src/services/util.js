@@ -11,7 +11,10 @@ function jamUtil() {
   var service = {
     hashString: hashString,
     getCacheBustUrl: getCacheBustUrl,
-    createGetUrl: createGetUrl
+    createGetUrl: createGetUrl,
+    getTypeScopeByPath: getTypeScopeByPath,
+    generateUUID: generateUUID,
+    defaultRelationships: defaultRelationships
   };
   return service;
 
@@ -33,7 +36,7 @@ function jamUtil() {
     return ("0000000" + (hval >>> 0).toString(16)).substr(-8);
   }
 
-
+  // adds a cash buster param to a given url and value
   function getCacheBustUrl(url, cb) {
     if (url.indexOf('?') === -1) {
       return url + '?cb=' + cb;
@@ -43,7 +46,7 @@ function jamUtil() {
   }
 
 
-
+  // builds url with ids and includes
   function createGetUrl(options, id) {
     var getUrl = options.url;
     id = options.id || id;
@@ -87,5 +90,72 @@ function jamUtil() {
     }
 
     return arr;
+  }
+
+
+
+
+  // find typeScope by an objects nested path from the root object
+  function getTypeScopeByPath(path, typeScopes) {
+    var i = 0;
+    var length = typeScopes.length;
+    path = getTypescopePath(path);
+
+    // try to match path
+    while (i < length) {
+      if (typeScopes[i].maps.indexOf(path) > -1) {
+        // NOTE do we want to add the type check here. is it possible to have a path match that does not apply to the scope path
+        return typeScopes[i];
+      }
+      i += 1;
+    }
+    return undefined;
+  }
+  // return path minus the array ints
+  function getTypescopePath(path) {
+    return path.split('/').filter(function (item) {
+      return isNaN(item);
+    }).join('/');
+  }
+
+
+
+
+  // --- Generate a uuid (v4) ----
+  function generateUUID() {
+    var d = Date.now();
+    d += performance();
+
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+
+    return uuid;
+  }
+
+
+
+  // --- Default relationships ---
+  // default relationship data to either and empty array for multi resource, or null for single resource
+  function defaultRelationships(obj, typeScope) {
+    var relationshipKeys;
+    var key;
+
+    // default relationship object/array
+    if (typeScope.relationships) {
+      relationshipKeys = Object.keys(typeScope.relationships);
+      key = relationshipKeys.pop();
+
+      while (key !== undefined) {
+        if (typeScope.relationships[key].meta && typeScope.relationships[key].meta.toMany === true && obj[key] === undefined) {
+          obj[key] = [];
+        } else {
+          obj[key] = null;
+        }
+        key = relationshipKeys.pop();
+      }
+    }
   }
 }

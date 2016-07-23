@@ -25,6 +25,12 @@ function HomeController($scope, jam, $timeout) {
             type: 'categories'
           }
         },
+      },
+      categories: {
+        meta: {
+          toMany: true
+        },
+        type: 'categories'
       }
     }
   };
@@ -41,15 +47,48 @@ function HomeController($scope, jam, $timeout) {
 
   manager.get(function (error) {
     console.log($scope.locations);
-    console.log($scope.menus);
-    console.log($scope.cat);
+    // console.log($scope.menus);
+    // console.log($scope.cat);
   });
 
+
   $timeout(function () {
-    manager.getById('d4a22709-a19b-4261-9acf-589ad9456766', function (error) {
-      console.log($scope.locations);
-      console.log($scope.menus);
-      console.log($scope.cat);
+    $scope.locations[0].name = 'change name';
+    // $scope.locations[0].newField = 'new';
+    // $scope.locations[0].obj = {
+    //   one: 1,
+    //   two: 2
+    // };
+    //
+    $scope.locations.push({
+      name: 'new loc',
+      city: "autsint",
+      state: 'adasda',
+      menus: [
+        {
+          menu: 'new sub',
+          type: 'newrtyrsdgfsd'
+        }
+      ]
     });
-  }, 4000);
+
+    // $scope.locations[0].menus.push({
+    //   name: 'new menu',
+    //   type: 'food'
+    // });
+
+    // $scope.locations[0].menus.push({
+    //   name: 'new menu',
+    //   type: 'food'
+    // });
+
+
+    // $scope.locations[1].categories[0].name = 'new';
+
+    // $scope.locations[1].categories.push({
+    //   name: 'new menu',
+    //   type: 'food'
+    // });
+    manager.applyChanges();
+  }, 1000);
 }

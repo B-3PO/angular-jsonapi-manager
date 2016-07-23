@@ -19,14 +19,13 @@ function jamData(jamRequest, jamUtil, jamJSONAPI) {
 
 
 
-
+  // get all data based on schema and optional id
   function get(options, callback) {
     jamRequest.get(jamUtil.getCacheBustUrl(options.getUrl, Date.now()), function (error, response) {
       if (error !== undefined) {
         callback(error);
         return;
       }
-
 
       options.original = angular.copy(response);
       var parsedJSONAPI = jamJSONAPI.parse(response, options.typeScopes);
@@ -39,6 +38,7 @@ function jamData(jamRequest, jamUtil, jamJSONAPI) {
   }
 
 
+  // get data by a single id for top level resource. This will not work if you set am id in the managers options
   function getById(options, id, callback) {
     if (options.id !== undefined) {
       throw Error('jam.getById() can only be called if no id was specified in the menager options');
@@ -51,9 +51,7 @@ function jamData(jamRequest, jamUtil, jamJSONAPI) {
         return;
       }
 
-      // TODO impiment compining data
       var combinedResponse = jamJSONAPI.combineData(options.original, response);
-
       options.original = angular.copy(combinedResponse);
       var parsedJSONAPI = jamJSONAPI.parse(combinedResponse, options.typeScopes);
       options.data = parsedJSONAPI.data;

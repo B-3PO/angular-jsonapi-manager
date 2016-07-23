@@ -9,8 +9,8 @@ angular
   .factory('jamManager', jamManager);
 
 
-jamManager.$inject = ['$q', 'jamUtil', 'jamData'];
-function jamManager($q, jamUtil, jamData) {
+jamManager.$inject = ['$q', 'jamUtil', 'jamData', 'jamPatch'];
+function jamManager($q, jamUtil, jamData, jamPatch) {
   var service = {
     Create: Create
   };
@@ -20,10 +20,8 @@ function jamManager($q, jamUtil, jamData) {
 
   function Create(options) {
     validateOptions(options);
-    // copy so options cannot be manipulated from experior
-    options = angular.copy(options);
+    options = angular.copy(options); // copy so options cannot be manipulated from experior
     buildOptions(options);
-
     return constructManager(options);
   }
 
@@ -56,13 +54,17 @@ function jamManager($q, jamUtil, jamData) {
       options.oldValue = options.id ? {} : [];
       options.typeList = {};
 
+      // if schema is passed in then build scopes of that
       if (options.schema) {
         options.typeScopes = buildtypeScopes(options.schema);
-        options.typeScopes.forEach(function (typeScope) {
-          Object.freeze(typeScope);
+        // convert scopes from object and feeze the objects so they cannot be manipulated
+        options.typeScopes = Object.keys(options.typeScopes).map(function (key) {
+          Object.freeze(options.typeScopes[key]);
+          return options.typeScopes[key];
         });
+
         inited = true;
-        initDefer.resolve();
+        initDefer.resolve(); // resolve the promise so gets can run
       } else {
         // call for schema
       }
@@ -81,7 +83,7 @@ function jamManager($q, jamUtil, jamData) {
      * @param {function=} callback - function to be called when data is recieved. It will pass back any errors
      */
     function get(callback) {
-      initDefer.promise.then(function () {
+      initDefer.promise.then(function () { // resolves after scopes have been built
         jamData.get(options, function (error) {
           if (error === undefined) { updateAllBindings(); }
           if (typeof callback === 'function') { callback(error); }
@@ -102,7 +104,7 @@ function jamManager($q, jamUtil, jamData) {
      * @param {function=} callback - function to be called when data is recieved. It will pass back any errors
      */
     function getById(id, callback) {
-      initDefer.promise.then(function () {
+      initDefer.promise.then(function () { // resolves after scopes have been built
         jamData.getById(options, id, function (error) {
           if (error === undefined) { updateAllBindings(); }
           if (typeof callback === 'function') { callback(error); }
@@ -125,6 +127,7 @@ function jamManager($q, jamUtil, jamData) {
      */
     // will callback on complete and pass in error if one exists
     function applyChanges(callback) {
+      console.log(jamPatch.diff(options));
       // jamBatch.add(options, function (error) {
       //   // TODO check to see if bindings need to be updated
       //   updateAllBindings();
@@ -188,7 +191,6 @@ function jamManager($q, jamUtil, jamData) {
         id: id
       };
       bindings.push(binding);
-
       if (inited === true) { updateBinding(binding); }
     }
 
@@ -254,13 +256,11 @@ function jamManager($q, jamUtil, jamData) {
     function updateBinding(binding) {
       // if the passed in object have been indefined kick back false
       if (binding.obj === undefined) { return false; }
-
       if (binding.type !== undefined) {
         binding.obj[binding.property] = getBindingType(binding);
       } else {
         binding.obj[binding.property] = options.data;
       }
-
       return true;
     }
 
@@ -321,7 +321,6 @@ function jamManager($q, jamUtil, jamData) {
      * Kill any watcher, unbind all data, set data to undefined
      */
     function destroy() {
-      // if (options.watcher !== undefined) { options.watcher(); }
       unbindAll();
       options = undefined;
     }
@@ -333,47 +332,51 @@ function jamManager($q, jamUtil, jamData) {
 
 
   // --- buidl typeScopes based on schema
-  function buildtypeScopes(schema, path, parent, arr) {
-    arr = arr || [];
+  function buildtypeScopes(schema, path, parent, obj) {
+    obj = obj || {};
     path = path || '';
 
-    // create base typeScope
-    var typeScope = {
-      map: parent === undefined ? '' : parent.map + '/' + path,
-      type: schema.type,
-      url: path
-    };
-
-    if (parent) {
-      // add parent scope to typeScope
-      typeScope.parent = parent;
-
-      // add typeScope to parent scopes relationships
-      if (parent.relationships === undefined) { parent.relationships = {}; }
-      parent.relationships[path] = typeScope;
+    // create base type object if none exists
+    if (obj[schema.type] === undefined) {
+      obj[schema.type] = {
+        type: schema.type,
+        url: path,
+        maps: [],
+        parents: []
+      };
+      if (schema.meta) { obj[schema.type].meta = angular.copy(schema.meta); }
     }
 
-    arr.push(typeScope);
+    // add map to typeScope. this is used to find the correct typescope bassed on the objects properties
+    obj[schema.type].maps.push(parent === undefined ? '' : (parent.maps[parent.maps.length-1] + '/' + path).replace(/^\//, ''));
+
+    // if parent scope exists then make refernces to and from it
+    if (parent) {
+      obj[schema.type].parents.push(parent);
+      // add typeScope to parent scopes relationships
+      if (parent.relationships === undefined) { parent.relationships = {}; }
+      parent.relationships[path] = obj[schema.type];
+    }
 
     // run on all relationships
     if (schema.relationships) {
       var keys = Object.keys(schema.relationships);
       var key = keys.pop();
       while (key !== undefined) {
-        buildtypeScopes(schema.relationships[key], key, typeScope, arr);
+        buildtypeScopes(schema.relationships[key], key, obj[schema.type], obj);
         key = keys.pop();
       }
     }
 
-    return arr;
+    return obj;
   }
 
 
 
-
   function buildOptions(options) {
+    // main get url bassed on schema and optional passed in id
     options.getUrl = jamUtil.createGetUrl(options);
-    // create hex hash; used to refernce this manger
+    // create hex hash. used to refernce this manger
     options.managerId = jamUtil.hashString(options.getUrl);
   }
 
@@ -382,7 +385,6 @@ function jamManager($q, jamUtil, jamData) {
     if (typeof options !== 'object' || options === null) {
       throw Error('jam.Create() expcts a paramter `options` of type `object`');
     }
-
     if (options.url === undefined) {
       throw Error('jam.Create() `options` requires a `url` propert');
     }
