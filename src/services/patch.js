@@ -5,7 +5,8 @@ angular
 
 jamPatch.$inject = ['jamUtil'];
 function jamPatch(jamUtil) {
-  var keyIndex = 0;
+  var getKeys = Object.keys;
+
   var service = {
     diff: diff,
     // apply: apply
@@ -14,222 +15,361 @@ function jamPatch(jamUtil) {
 
 
   // returns an array of pathces for adds,removes, and replaces(updates)
-  function diff(options, reverse) {
+  function diff(options) {
     var patches = [];
-    if (reverse === true) {
-      generatePataches(options.oldValue, angular.copy(options.data), patches, '', options.typeScopes);
-    } else {
-      generatePataches(options.data, angular.copy(options.oldValue), patches, '', options.typeScopes);
-    }
+    generatePataches(options.data, options.oldValue, patches, '', options.typeScopes);
+
     // TODO rearange the relationships based on beans implamentation
-    return reduceReplaces(patches);
+    console.log(patches);
+    return reducePatches(patches, options.data);
   }
 
 
+  function traverse(data, id, type) {
+    var i;
+    var length;
+    var keys;
+    var key;
+    var found = false;
+
+    if (data instanceof Array) {
+      i = 0;
+      length = data.length;
+      while (i < length) {
+        if (traverse(data[i], id, type) === true) {
+          found = true;
+          break;
+        }
+        i += 1;
+      }
+    } else if (typeof data === 'object' && data !== null) {
+      if (data.typeScope && data.typeScope.type === type && data.id === id) {
+        found = true;
+        return found;
+      }
+
+      keys = getFilteredKeys(data);
+      key = keys.pop();
+      while (key !== undefined) {
+        if (traverse(data[key], id, type) === true) {
+          found = true;
+          break;
+        }
+        key = keys.pop();
+      }
+    }
+
+    return found;
+  }
 
 
-  // by default the patcher will produce individual repalces for each object property
-  // this function will combine them into one replace patch
-  function reduceReplaces(arr) {
-    var idObj = {};
-    arr.forEach(function (item) {
-      if (item.id === undefined) {
-        idObj[nextKey()] = item;
+  function reducePatches(patches, data) {
+    var obj = {};
+    patches.forEach(function (patch) {
+      if (patch.resource.id === undefined) {
+        console.error('Patch does not contain an `id`');
         return;
       }
-      if (idObj[item.id] === undefined) {
-        idObj[item.id] = item;
+
+      // check to see if resource is attached to anything else and remove patch, if not a relationship patch
+      if (patch.op === 'delete' && !Object.keys(patch.resource.relationships).length && traverse(data, patch.resource.id, patch.resource.type) === true) {
         return;
       }
-      if (idObj[item.id].op === 'replace') {
-        angular.extend(idObj[item.id].attributes, item.attributes);
-        angular.extend(idObj[item.id].oldAttributes, item.oldAttributes);
+
+      // add patch if it does not exist
+      if (obj[patch.resource.id] === undefined) {
+        obj[patch.resource.id] = patch;
+        return;
+      }
+
+      if (obj[patch.resource.id].op === patch.op) {
+        if (patch.op === 'update' || patch.op === 'delete') {
+          extendResource(obj[patch.resource.id].resource, patch.resource);
+        } else {
+          // NOTE this may not apply to deletions
+          console.error('Cannot combine 2 patched of the same operation whe the operation is not `update` or `delete`');
+        }
+      } else if ((obj[patch.resource.id].op === 'add' || obj[patch.resource.id].op === 'update') && (patch.op === 'update' || patch.op === 'add')) {
+        obj[patch.resource.id].op = 'add';
+        extendResource(obj[patch.resource.id].resource, patch.resource);
+      } else {
+        console.error('Not sure how i got here');
       }
     });
-    return Object.keys(idObj).map(function (key) { return idObj[key]; });
-  }
-  // create dummy keys if no uuid was generated. this is only used internally in this service
-  function nextKey() {
-    return '' + keyIndex++;
+    // convert object to array
+    return getKeys(obj).map(function (key) { return obj[key]; });
   }
 
+  function extendResource(dest, src) {
+    // attributes
+    var keys = getKeys(src.attributes);
+    var key = keys.pop();
+    while (key !== undefined) {
+      dest.attributes[key] = src.attributes[key];
+      key = keys.pop();
+    }
+
+    // old attributes
+    keys = getKeys(src.oldAttributes);
+    key = keys.pop();
+    while (key !== undefined) {
+      dest.oldAttributes[key] = src.oldAttributes[key];
+      key = keys.pop();
+    }
+
+    // relationships
+    keys = getKeys(src.relationships);
+    key = keys.pop();
+    while (key !== undefined) {
+      if (dest.relationships[key] === undefined) {
+        dest.relationships[key] = angular.copy(src.relationships[key]);
+      } else if (dest.relationships[key].data instanceof Array) {
+        dest.relationships[key].push(src.relationships[key].data[0]);
+      } else {
+        console.error('Cannot combine relationships that are objects(single relationship)');
+      }
+      key = keys.pop();
+    }
+  }
 
 
-  function generatePataches(newValue, oldValue, patches, path, typeScopeList, parentId) {
-    var i;
+
+  // this function expects to onyl receive resoure objects or arrays containing resource objects
+  function generatePataches(newValue, oldValue, patches, path, typeScopeList, parent) {
+    if (oldValue instanceof Array) {
+      diffArray(newValue, oldValue, patches, path, typeScopeList, parent);
+    } else {
+      diffObj(newValue, oldValue, patches, path, typeScopeList, parent);
+    }
+  }
+
+
+  // expects an array of resource objects
+  function diffArray(newValue, oldValue, patches, path, typeScopeList, parent) {
     var j;
-    var isObj;
-    var oldKey;
-    var newKey;
-    var oldSub;
     var newSub;
-    var patch;
-    var changed;
+    var oldSub;
+    var match;
     var typeScope;
-    var relationshipKeys;
-    var lengthDiff = 0;
-    var oldKeys = getKeys(oldValue);
-    var newKeys = getKeys(newValue);
-    var oldLength = oldKeys.length;
-    var newLength = newKeys.length;
-    var newIsArray = newValue instanceof Array;
-    var oldIsArray = oldValue instanceof Array;
+    var patch;
+    var resourceKey;
+    var i = 0;
+    var diffLength = 0;
+    var oldLength = oldValue.length;
+    var newLength = newValue.length;
 
 
+    // TODO implament deletions
 
-    // --- deletions ---
-    if (oldLength !== newLength) {
-      lengthDiff = Math.abs(oldLength - newLength);
+    diffLength = Math.abs(newLength - oldLength);
+    if (diffLength > 0) {
       while (i < oldLength) {
-        oldKey = oldKeys[i];
-        oldSub = oldValue[oldKey];
+        oldSub = oldValue[i];
         i += 1;
-        if (!oldSub || typeof oldSub !== 'object' || oldSub.typeScope === undefined) { continue; }
-        if (newIsArray && findById(oldSub.id, newValue) !== undefined) {
-          oldValue.splice(i, 1); // remove oldValue so it is not looped over again
-          i -= 1; // set back the counter because of oldValue removal
-          oldLength -= 1; // set back the length because of oldValue removal
-          lengthDiff -= 1; // set back the difference length because we know one of the differences is a delete and it has been handled
+        if (!oldSub || typeof oldSub !== 'object') { continue; }
+        // if no typeScope exists then try to find a match
+        typeScope = jamUtil.getTypeScopeByPath(path, typeScopeList);
+        if (typeScope === undefined) {
+          console.error('Cannot find matching typeScope for resource');
+          continue;
+        }
 
-          patches.push({
-            op: 'remove',
-            path: path,
-            resource: resourceClone(oldSub, path, typeScopeList),
-            parentId: parentId
-          });
+        // cannot find matching resource in new data, create delete patch
+        if (findById(oldSub.id, newValue) === undefined) {
+          createDeletePatch(oldSub, patches, path, typeScope, parent);
+          diffLength -= 1;
+          i -= 1;
+          oldLength -= 1;
+          oldValue.splice(i, 1);
         }
       }
     }
 
-
-
-    // --- additions ---
-    oldLength = oldKeys.length;
-    if (lengthDiff > 0) {
+    // aditions
+    if (diffLength > 0) {
       i = 0;
+      oldLength = oldValue.length
       while (i < newLength) {
-        newKey = newKeys[i];
-        newSub = newValue[newKey];
+        newSub = newValue[i];
         i += 1;
-        j = 0;
-        isObj = typeof newSub === 'object' && newSub !== null;
-        changed = true;
-        while (j < oldLength) {
-          oldKey = oldKeys[j];
-          oldSub = oldValue[oldKey];
-          j += 1;
+        if (!newSub || typeof newSub !== 'object') { continue; }
 
-          // check for added objects by id
-          if (newIsArray) {
-            if (isObj && typeof oldSub === 'object' && oldSub !== null && newSub.typeScope && newSub.id === oldSub.id) {
-              changed = false;
-              break;
-            }
-
-          // parent are objects to check for added keys
-          } else if (newKey === oldKey) {
-            changed = false;
-            break;
-          }
-        }
-
-
-        if (changed === true) {
-          // create add if parent is an array
-          if (newIsArray) {
-            patch = {
-              op: 'add',
-              path: path,
-              // reference: newObj,
-              parentId: parentId
-            };
-
-            if (newSub.typeScope === undefined) {
-              typeScope = jamUtil.getTypeScopeByPath(path, typeScopeList);
-              Object.defineProperty(newSub, 'typeScope', {
-                enumerable: false,
-                configurable: false,
-                writable: false,
-                value: typeScope
-              });
-              patch.new = true;
-            }
-
-            patch.resource = resourceClone(newSub, path, typeScopeList);
-            if (newSub.typeScope.relationships) {
-              var relKeys = Object.keys(newSub.typeScope.relationships);
-              var relKey = relKeys.pop();
-              while (relKey !== undefined) {
-                if (newSub[relKey] !== undefined && oldSub[relKey] !== undefined) {
-                  generatePataches(newSub[relKey], oldSub[relKey], patches, path + '/' + relKey, typeScopeList, newSub.id);
-                }
-                relKey = relKeys.pop();
-              }
-            }
-
-            patches.push(patch);
-
-          // create replace if the parent is an object
+        // if no typeScope exists then try to find a match
+        if (newSub.typeScope === undefined) {
+          // if no typeScope then assume the resource is new
+          if (jamUtil.getTypeScopeByPath(path, typeScopeList) !== undefined) {
+            // create id and attach typeScope
+            createAddPatch(newSub, oldSub, patches, path, typeScopeList, parent);
           } else {
-            patch = {
-              op: 'replace',
-              path: path,
-              id: oldValue.id,
-              type: newValue.typeScope.type,
-              parentId: parentId,
-              attributes: {},
-              oldAttributes: {}
-            };
-            patch.attributes[newKey] = angular.copy(newSub);
-            patches.push(patch);
+            console.error('Cannot find matching typeScope for resource');
           }
+
+        // if parent exists and a matching item cannot be found in the old data
+        } else if (parent && findById(newSub.id, oldValue) === undefined) {
+          createRelationshipPatch('update', newSub.id, newSub.typeScope.type, patches, path, parent);
         }
       }
     }
 
 
-
-    // --- replaces ----
-    // try to get typScope and a list of its relations from parent new value
-    // this will onyl exist if the parent is a resource
-    typeScope = typeof newValue === 'object' && newValue !== null ? newValue.typeScope : undefined;
-    relationshipKeys = typeScope && typeScope.relationships ? Object.keys(typeScope.relationships) : [];
-
+    // recusive check
     i = 0;
     while (i < oldLength) {
-      oldKey = oldKeys[i];
-      oldSub = oldValue[oldKey];
+      oldSub = oldValue[i];
       i += 1;
 
-      // if oldSub is either an array or object
-      if (oldIsArray && oldSub) {
-        newSub = findById(oldSub.id, newValue); // try to find a matching resource by its id
-        if (newSub) {
-          generatePataches(newSub, oldSub, patches, path, typeScopeList, oldValue instanceof Array ? parentId : oldValue.id);
-        }
-      } else {
-        // if property is a relationship
-        if (relationshipKeys.indexOf(oldKey) !== -1) {
-          generatePataches(newValue[oldKey], oldValue[oldKey], patches, oldValue instanceof Array ? path : path + '/' + escapePath(oldKey), typeScopeList, oldValue.id);
-
-        // add miss matches to patch
-        } else if (angular.equals(oldSub, newValue[oldKey]) === false) {
-          patch = {
-            op: 'replace',
-            path: path,
-            id: oldValue.id,
-            type: typeScope.type,
-            parentId: parentId,
-            attributes: {},
-            oldAttributes: {}
-          };
-          patch.attributes[oldKey] = angular.copy(newValue[oldKey]);
-          patch.oldAttributes[oldKey] = angular.copy(oldSub);
-          patches.push(patch);
-        }
+      // only run on existing resource objects
+      if (!oldSub || typeof oldSub !== 'object') { continue; }
+      match = findById(oldSub.id, newValue);
+      if (match !== undefined) {
+        generatePataches(match, oldSub, patches, path, typeScopeList, parent);
       }
     }
   }
+
+
+  function diffObj(newValue, oldValue, patches, path, typeScopeList, parent) {
+    var i;
+    var newSub;
+    var oldSub;
+    var oldKeys;
+    var key;
+    var relKeys;
+    var patch;
+
+
+    if (newValue === null && oldValue !== null) {
+      createDeletePatch(oldValue, patches, path, jamUtil.getTypeScopeByPath(path, typeScopeList), parent);
+      return;
+    } else if (newValue !== null && oldValue === undefined) {
+      createAddPatch(newValue, oldValue, patches, path, typeScopeList, parent);
+      return;
+    }
+
+    oldKeys = getFilteredKeys(oldValue);
+    if (oldKeys.length < getFilteredKeys(newValue).length) {
+      // TODO figure out how to handle this situation
+      // should i allow this or should i require the allowed attrs to be in the schema
+      console.error('Unexpected addition of properties to resource. No updates will be sent to the server for these changes');
+    }
+    key = oldKeys.pop();
+    relKeys = newValue.typeScope.relationships ? getKeys(newValue.typeScope.relationships) : [];
+    while (key !== undefined) {
+      oldSub = oldValue[key];
+      newSub = newValue[key];
+
+      if (relKeys.indexOf(key) !== -1) {
+        generatePataches(newSub, oldSub, patches, path+'/'+key, typeScopeList, newValue);
+      } else if (oldSub !== newSub || angular.equals(oldSub, newSub) === false) {
+        createUpdatePatch(newValue, key, newSub, oldSub, patches, path, parent);
+      }
+
+      key = oldKeys.pop();
+    }
+  }
+
+
+  function convertToResource(obj, path, typeScopeList) {
+    var typeScope = obj.typeScope ? obj.typeScope : jamUtil.getTypeScopeByPath(path, typeScopeList);
+    var typeRelationships = typeScope.relationships ? getKeys(typeScope.relationships) : [];
+    var resource = createBaseResource(obj.id, typeScope.type);
+
+    // copy attributes. getFilteredKeys will filter out `id` and properties with `$$`
+    getFilteredKeys(obj).filter(function (key) {
+      return typeRelationships.indexOf(key) === -1;
+    }).forEach(function (key) {
+      // only run copy on objects for performance
+      resource.attributes[key] = typeof obj[key] !== 'object' ? obj[key] : angular.copy(obj[key]);
+    });
+
+    return resource;
+  }
+
+
+  function createDeletePatch(oldSub, patches, path, typeScope, parent) {
+    patches.push(createPatch('delete', path, createBaseResource(oldSub.id, typeScope.type), parent));
+    if (parent) {
+      createRelationshipPatch('delete', oldSub.id, typeScope.type, patches, path, parent);
+    }
+  }
+
+  // create patch fore new item and ckeck its relationships.
+  function createAddPatch(newSub, oldSub, patches, path, typeScopeList, parent) {
+    if (newSub.id === undefined) { newSub.id = jamUtil.generateUUID(); } // add uuid if none exists. this should onyl apply to newely created resources
+    Object.defineProperty(newSub, 'typeScope', {
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      value: jamUtil.getTypeScopeByPath(path, typeScopeList)
+    });
+
+
+    // run gen patches on relationships that exist
+    if (newSub.typeScope.relationships) {
+      getKeys(newSub.typeScope.relationships).forEach(function (key) {
+        if (newSub[key] === undefined) { return; }
+        var many = newSub.typeScope.relationships[key].meta.toMany;
+        generatePataches(newSub[key], many ? [] : null, patches, path+'/'+key, typeScopeList, newSub);
+      });
+    }
+    patches.push(createPatch('add', path, convertToResource(newSub, path, typeScopeList), parent));
+
+    // create relationship update for new items added to parents
+    if (parent) {
+      createRelationshipPatch('update', newSub.id, newSub.typeScope.type, patches, path, parent);
+    }
+  }
+
+  // create update patch fro relationships
+  function createRelationshipPatch(op, id, type, patches, path, parent) {
+    var resourceKey = path.split('/').pop();
+    var resource = createBaseResource(parent.id, parent.typeScope.type);
+    resource.relationships[resourceKey] = {
+      data: {
+        id: id,
+        type: type
+      }
+    };
+    // convert to array if toMany relationship
+    if (parent[resourceKey] instanceof Array) {
+      resource.relationships[resourceKey].data = [resource.relationships[resourceKey].data];
+    }
+    patches.push(createPatch(op, path.slice(0, path.lastIndexOf('/')), resource));
+  }
+
+  // create update patch for attributes
+  function createUpdatePatch(newValue, key, newSub, oldSub, patches, path, parent) {
+    var resource = createBaseResource(newValue.id, newValue.typeScope.type);
+    resource.attributes[key] = typeof newSub !== 'object' ? newSub : angular.copy(newSub);
+    resource.oldAttributes[key] = typeof oldSub !== 'object' ? oldSub : angular.copy(oldSub);
+    patches.push(createPatch('update', path, resource, parent));
+  }
+
+
+  // patch format
+  function createPatch(op, path, resource, parent) {
+    return {
+      op: op,
+      path: path,
+      resource: resource,
+      parent: !parent ? {} : {
+        id: parent.id,
+        type: parent.typeScope.type
+      }
+    };
+  }
+
+  // shell of the resource objec used for all patches
+  function createBaseResource(id, type) {
+    return {
+      id: id,
+      type: type,
+      attributes: {},
+      oldAttributes: {},
+      relationships: {}
+    };
+  }
+
 
 
 
@@ -240,100 +380,19 @@ function jamPatch(jamUtil) {
     var i = 0;
     var length = arr.length;
     while (i < length) {
-      if (arr[i] && arr[i].id === id) {
-        return arr[i];
-      }
+      if (arr[i] && arr[i].id === id) { return arr[i]; }
       i += 1;
     }
     return undefined;
   }
 
 
-
-
-  // return jsonapi resouce based on changes
-  function resourceClone(obj, path, typeScopeList) {
-    if (obj.id === undefined) { obj.id = jamUtil.generateUUID(); } // add uuid if none exists. this should onyl apply to newely created resources
-    var typeScope = obj.typeScope;
-    var typeRelationships = typeScope && typeScope.relationships ? Object.keys(typeScope.relationships) : [];
-    var resource = {
-      id: obj.id,
-      type: typeScope ? typeScope.type : undefined
-    };
-
-    // copy attributes
-    getKeys(obj).filter(function (key) {
-      return typeRelationships.indexOf(key) === -1;
-    }).forEach(function (key) {
-      if (resource.attributes === undefined) { resource.attributes = {}; }
-      // only run copy on objects for performance
-      resource.attributes[key] = typeof obj[key] !== 'object' ? obj[key] : angular.copy(obj[key]);
-    });
-
-    // copy relationships
-    typeRelationships.forEach(function (key) {
-      if (obj[key] === undefined) { return; }
-      typeScope = jamUtil.getTypeScopeByPath(path+'/'+key, typeScopeList);
-      if (resource.relationships === undefined) { resource.relationships = {}; }
-
-      // multiple relationships
-      if (obj[key] instanceof Array) {
-        resource.relationships[key] = {
-          data: obj[key].map(function (item) {
-            if (item.id === undefined) { item.id = jamUtil.generateUUID(); } // add uuid if none exists. this should onyl apply to newely created relations
-            return {
-              id: item.id,
-              type: typeScope.type // TODO handle case when no typeScope exists
-            };
-          })
-        };
-
-      // single relationship
-      } else {
-        if (obj[key].id === undefined) { obj[key].id = jamUtil.generateUUID(); } // add uuid if none exists. this should onyl apply to newely created relations
-        resource.relationships[key] = {
-          data: {
-            id: obj[key].id,
-            type: typeScope.type // TODO handle case when no typeScope exists
-          }
-        };
-      }
-    });
-
-    return resource;
-  }
-
-
-
-
-
-  // --- Get keys for object or array ---
-  // for arrays it will return an array of ints
-  // for objects it will filter out `id` and any keys that begin with `$$`(mostly for angular)
-  function getKeys(obj) {
-    var i;
-    var length;
-    var keys;
-
-    // array
-    if (obj instanceof Array) {
-      i = 0;
-      length = obj.length;
-      keys = new Array(length);
-      while (i < length) {
-        keys[i] = i;
-        i += 1;
-      }
-      return keys;
-    }
-
-    // object
-    keys = Object.keys(obj).filter(function (key) {
+  // ket object keys. filter out `id` and any property that starts with `$$`
+  function getFilteredKeys(obj) {
+    return getKeys(obj).filter(function (key) {
       return key !== 'id' && key.indexOf('$$') !== 0;
     });
-    return keys;
   }
-
 
   // --- escpae path ~, / ---
   function escapePath(str) {

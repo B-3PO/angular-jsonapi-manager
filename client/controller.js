@@ -53,24 +53,33 @@ function HomeController($scope, jam, $timeout) {
 
 
   $timeout(function () {
-    $scope.locations[0].name = 'change name';
+    // $scope.locations[0].name = 'change name';
+    // $scope.locations[0].city = 'change chity';
     // $scope.locations[0].newField = 'new';
     // $scope.locations[0].obj = {
     //   one: 1,
     //   two: 2
     // };
     //
-    $scope.locations.push({
-      name: 'new loc',
-      city: "autsint",
-      state: 'adasda',
-      menus: [
-        {
-          menu: 'new sub',
-          type: 'newrtyrsdgfsd'
-        }
-      ]
-    });
+    // $scope.locations.push({
+    //   name: 'new loc',
+    //   city: "autsint",
+    //   state: 'adasda',
+    //   menus: [
+    //     {
+    //       menu: 'new sub',
+    //       type: 'newrtyrsdgfsd'
+    //     }
+    //   ]
+    // });
+
+
+    // $scope.locations.push({
+    //   name: 'new menu',
+    //   type: 'food'
+    // });
+
+    // $scope.locations[0].categories.push($scope.locations[1].categories[0]);
 
     // $scope.locations[0].menus.push({
     //   name: 'new menu',
@@ -89,6 +98,9 @@ function HomeController($scope, jam, $timeout) {
     //   name: 'new menu',
     //   type: 'food'
     // });
+
+    $scope.locations.splice(2,1);
+    $scope.locations[1].categories.splice(0,1);
     manager.applyChanges();
   }, 1000);
 }
