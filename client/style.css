@@ -1,0 +1,11 @@
+body {
+  background: rgb(250,250,250);
+}
+br-expander-header {
+  background: #FFF;
+  border-bottom: 1px solid #DDD;
+}
+
+br-expander-content > div {
+  padding: 18px;
+}

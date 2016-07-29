@@ -9,6 +9,9 @@ HomeController.$inject = ['$scope', 'jam', '$timeout'];
 function HomeController($scope, jam, $timeout) {
   var vm = this;
 
+  vm.save = save;
+  vm.cancel = cancel;
+
   var jsonapiSchema = {
     type: 'locations',
     relationships: {
@@ -26,12 +29,12 @@ function HomeController($scope, jam, $timeout) {
           }
         },
       },
-      categories: {
-        meta: {
-          toMany: true
-        },
-        type: 'categories'
-      }
+      // categories: {
+      //   meta: {
+      //     toMany: true
+      //   },
+      //   type: 'categories'
+      // }
     }
   };
 
@@ -40,13 +43,23 @@ function HomeController($scope, jam, $timeout) {
     url: 'locations'
   });
 
-  manager.registerScope($scope, true);
-  manager.bind($scope, 'locations');
-  manager.bind($scope, 'menus', 'menus');
-  manager.bind($scope, 'cat', 'categories', '2784472d-7b4d-47c2-be52-5b605f2dd401');
+  function save() {
+    manager.applyChanges(function (error) {
+      if (error) { console.log(error); }
+    });
+  }
+
+  function cancel() {
+    manager.removeChanges();
+  }
+
+  manager.registerScope($scope, true, vm);
+  manager.bind(vm, 'locations');
+  // manager.bind($scope, 'menus', 'menus');
+  // manager.bind($scope, 'cat', 'categories', '2784472d-7b4d-47c2-be52-5b605f2dd401');
 
   manager.get(function (error) {
-    console.log($scope.locations);
+    // console.log($scope.locations);
     // console.log($scope.menus);
     // console.log($scope.cat);
   });
@@ -117,11 +130,11 @@ function HomeController($scope, jam, $timeout) {
     // });
 
     // $scope.locations.splice(2,1);
-    $scope.locations[1].categories.splice(0,1);
+    // $scope.locations[1].categories.splice(0,1);
     // manager.removeChanges();
-    manager.applyChanges(function (error) {
-      console.log('changes applied', error);
-    });
+    // manager.applyChanges(function (error) {
+    //   console.log('changes applied', error);
+    // });
     // manager.bind($scope, 'test', 'locations', $scope.locations[0].id);
     // console.log($scope.test)
   }, 500);

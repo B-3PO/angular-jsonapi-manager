@@ -13,12 +13,13 @@ var rename = require("gulp-rename");
 var stripDebug = require('gulp-strip-debug');
 var serve = require('gulp-serve');
 var bump = require('gulp-bump');
+var Server = require('karma').Server;
 
 
 
 var BASE = 'src/';
 var paths = {
-  scripts: [BASE + '*.js', BASE + '**/*.js'],
+  scripts: [BASE + '*.js', BASE + '**/*.js', '!' + BASE + '*.spec.js', '!' + BASE + '**/*.spec.js'],
   clientScripts: ['!client/modules/**/*.js', 'client/app.js', 'client/*.js', 'client/**/*.js'],
   index: ['client/index.html'],
   partials: ['client/**/*.html'],
@@ -45,6 +46,22 @@ gulp.task('serve', serve({
 // --- Clean Path -------
 gulp.task('clean', function () {
   return del(['public/']);
+});
+
+
+gulp.task('test', function (done) {
+  new Server({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: true
+  }, function (errorCode) {
+    if (errorCode !== 0) {
+      console.log('Karma exited with error code ' + errorCode);
+      done();
+      return process.exit(errorCode);
+    }
+    done();
+    if (typeof callback === 'function') { callback(); }
+  }).start();
 });
 
 
@@ -146,7 +163,7 @@ gulp.task('watch', function () {
   // copy partials
   gulp.watch(paths.partials, function (event) {
     gulp.src(event.path)
-      .pipe(gulp.dest('public'))
+      .pipe(gulp.dest('public/partials'))
       .on('end', function () {
         gutil.log(gutil.colors.green('✔ Partials Task'), 'Finished');
       });

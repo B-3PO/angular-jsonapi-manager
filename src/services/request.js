@@ -26,7 +26,7 @@ function jamRequest($http, $q) {
   function sendBatchItem(patch) {
     return request({
       method: getMethod(patch.op),
-      url: getUrl(patch) + '/temp',
+      url: getUrl(patch),
       data: getData(patch)
     });
   }
@@ -83,6 +83,6 @@ function jamRequest($http, $q) {
       data = patch.resource.data;
     }
 
-    return data;
+    return {data: data};
   }
 }

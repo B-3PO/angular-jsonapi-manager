@@ -1,1 +1,78 @@
 <h2>Json Api Data Manager</h2>
+
+<br-content auto-height>
+  <br-expander ng-repeat="location in vm.locations">
+    <br-expander-header>
+      <div style="padding-left: 12px">{{location.name}}</div>
+      <br-expander-icon></br-expander-icon>
+    </br-expander-header>
+
+    <br-expander-content>
+      <br-input>
+        <input ng-model="location.name" placeholder="Name"/>
+      </br-input>
+      <div layout="row">
+        <br-input flex>
+          <input ng-model="location.city" placeholder="State"/>
+        </br-input>
+        <br-input flex>
+          <input ng-model="location.state" placeholder="City"/>
+        </br-input>
+      </div>
+      <div layout="row">
+        <span flex></span>
+        <br-button class="br-warn" ng-click="vm.cancel();">Cancel</br-button>
+        <br-button class="br-primary" ng-click="vm.save();">Save</br-button>
+      </div>
+
+      <h4>Menus</h4>
+      <br-expander ng-repeat="menu in location.menus">
+        <br-expander-header>
+          <div style="padding-left: 12px">{{menu.name}}</div>
+          <br-expander-icon></br-expander-icon>
+        </br-expander-header>
+
+        <br-expander-content>
+          <div layout="row">
+            <br-input flex>
+              <input ng-model="menu.name" placeholder="Name"/>
+            </br-input>
+            <br-input flex>
+              <input ng-model="menu.type" placeholder="Type"/>
+            </br-input>
+          </div>
+          <div layout="row">
+            <span flex></span>
+            <br-button class="br-warn" ng-click="vm.cancel();">Cancel</br-button>
+            <br-button class="br-primary" ng-click="vm.save();">Save</br-button>
+          </div>
+
+          <h4>Categories</h4>
+          <br-expander ng-repeat="category in menu.categories">
+            <br-expander-header>
+              <div style="padding-left: 12px">{{category.name}}</div>
+              <br-expander-icon></br-expander-icon>
+            </br-expander-header>
+
+            <br-expander-content>
+              <div layout="row">
+                <br-input flex>
+                  <input ng-model="category.name" placeholder="Name"/>
+                </br-input>
+                <br-input flex>
+                  <input ng-model="category.type" placeholder="Type"/>
+                </br-input>
+              </div>
+              <div layout="row">
+                <span flex></span>
+                <br-button class="br-warn" ng-click="vm.cancel();">Cancel</br-button>
+                <br-button class="br-primary" ng-click="vm.save();">Save</br-button>
+              </div>
+            </br-expander-content>
+          </br-expander>
+        </br-expander-content>
+      </br-expander>
+
+    </br-expander-content>
+  </br-expander>
+</br-content>
