@@ -3,29 +3,33 @@ angular
   .factory('jamRequest', jamRequest);
 
 
-jamRequest.$inject = ['$http'];
-function jamRequest($http) {
+jamRequest.$inject = ['$http', '$q'];
+function jamRequest($http, $q) {
   var service = {
     baseUrl: '',
     headers: {},
-    get: get
+    get: get,
+    sendBatchItem: sendBatchItem
   };
   return service;
 
 
 
   function get(url, headers) {
-    var callback = arguments[arguments.length - 1];
-
-    request({
+    return request({
       method: 'GET',
       url: url,
-      headers: headers,
-      callback: typeof callback === 'function' ? callback : undefined
+      headers: headers
     });
   }
 
-
+  function sendBatchItem(patch) {
+    return request({
+      method: getMethod(patch.op),
+      url: getUrl(patch) + '/temp',
+      data: getData(patch)
+    });
+  }
 
 
   function request(options) {
@@ -41,10 +45,44 @@ function jamRequest($http) {
       requestObj.data = options.data;
     }
 
-    $http(requestObj).success(function (response, status, headers) {
-      if (typeof options.callback === 'function') { options.callback(undefined, response, headers); }
-    }).error(function (response, status) {
-      if (typeof options.callback === 'function') { options.callback({response: response, status: status}); }
-    });
+    return $http(requestObj);
+  }
+
+
+
+
+  function getMethod(op) {
+    if (op === 'add') { return 'POST'; }
+    if (op === 'update' || op === 'relationship') { return 'PATCH'; }
+    if (op === 'delete' || op === 'delete-relationship') { return 'DELETE'; }
+  }
+
+  function getUrl(patch) {
+    if (patch.op === 'add') { return patch.url; }
+    if (patch.op === 'delete') { return patch.url+'/'+patch.resource.id; }
+    if (patch.op === 'update' || patch.op === 'relationship') { return patch.url+'/'+patch.resource.id; }
+    if (patch.op === 'delete-relationship') { return patch.url; }
+  }
+
+  function getData(patch) {
+    var data;
+    if (patch.op === 'add' || patch.op === 'update' || patch.op === 'relationship') {
+      data = {
+        id: patch.resource.id,
+        type: patch.resource.type
+      };
+      if (patch.resource.attributes && Object.keys(patch.resource.attributes).length) {
+        data.attributes = patch.resource.attributes;
+      }
+      if (patch.resource.relationships && Object.keys(patch.resource.relationships).length) {
+        data.relationships = patch.resource.relationships;
+      }
+    }
+
+    if (patch.op === 'delete-relationship') {
+      data = patch.resource.data;
+    }
+
+    return data;
   }
 }

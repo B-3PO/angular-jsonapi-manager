@@ -3,8 +3,11 @@ angular
   .factory('jamUtil', jamUtil);
 
 
-jamUtil.$inject = [];
-function jamUtil() {
+var uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+
+jamUtil.$inject = ['jamStorage', 'jamKeys'];
+function jamUtil(jamStorage, jamKeys) {
   var performance = window.performance ? angular.bind(window.performance, window.performance.now) : Date.now;
   var slice = Array.prototype.slice;
 
@@ -14,10 +17,27 @@ function jamUtil() {
     createGetUrl: createGetUrl,
     getTypeScopeByPath: getTypeScopeByPath,
     generateUUID: generateUUID,
-    defaultRelationships: defaultRelationships
+    defaultRelationships: defaultRelationships,
+    getPatches: getPatches
   };
   return service;
 
+
+
+  // --- Get Patches ---
+  function getPatches(options) {
+    var storedItem = jamStorage.get(jamKeys.STORED_DATA_PREFIX + options.managerId) || [];
+
+    if (storedItem.length > 0) {
+      return storedItem.map(function (item) {
+        return item.data;
+      }).reduce(function (arr, item) {
+        return arr.concat(item);
+      });
+    }
+
+    return undefined;
+  }
 
 
   // Calculate a 32 bit FNV-1a hash and convert it to hex
@@ -113,8 +133,8 @@ function jamUtil() {
   }
   // return path minus the array ints
   function getTypescopePath(path) {
-    return path.split('/').filter(function (item) {
-      return isNaN(item);
+    return path.split('/').filter(function (str) {
+      return !uuidPattern.test(str);
     }).join('/');
   }
 

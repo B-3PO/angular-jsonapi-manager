@@ -21,19 +21,15 @@ function jamData(jamRequest, jamUtil, jamJSONAPI) {
 
   // get all data based on schema and optional id
   function get(options, callback) {
-    jamRequest.get(jamUtil.getCacheBustUrl(options.getUrl, Date.now()), function (error, response) {
-      if (error !== undefined) {
-        callback(error);
-        return;
-      }
-
-      options.original = angular.copy(response);
-      var parsedJSONAPI = jamJSONAPI.parse(response, options.typeScopes);
+    jamRequest.get(jamUtil.getCacheBustUrl(options.getUrl, Date.now())).then(function (response) {
+      options.original = angular.copy(response.data);
+      var parsedJSONAPI = jamJSONAPI.parse(response.data, options.typeScopes);
       options.data = parsedJSONAPI.data;
       options.oldValue = angular.copy(parsedJSONAPI.data);
       options.typeList = parsedJSONAPI.typeList || {};
-
       callback(undefined);
+    }, function (error) {
+      callback(error);
     });
   }
 
@@ -44,21 +40,25 @@ function jamData(jamRequest, jamUtil, jamJSONAPI) {
       throw Error('jam.getById() can only be called if no id was specified in the menager options');
     }
 
+    // TODO make this call add to the original as patches
+    // we have to assume updated data can be coming down with this and current patches might be out of date
     var url = jamUtil.createGetUrl(options, id);
-    jamRequest.get(jamUtil.getCacheBustUrl(url, Date.now()), function (error, response) {
-      if (error !== undefined) {
-        callback(error);
-        return;
-      }
-
-      var combinedResponse = jamJSONAPI.combineData(options.original, response);
+    jamRequest.get(jamUtil.getCacheBustUrl(url, Date.now())).then(function (response) {
+      var combinedResponse = jamJSONAPI.combineData(options.original, response.data);
       options.original = angular.copy(combinedResponse);
       var parsedJSONAPI = jamJSONAPI.parse(combinedResponse, options.typeScopes);
       options.data = parsedJSONAPI.data;
-      options.oldValue = angular.copy(parsedJSONAPI.data);
       options.typeList = parsedJSONAPI.typeList || {};
 
+      var patches = jamUtil.getPatches(options);
+      if (patches !== undefined) {
+        jamPatch.apply(options, patches);
+      }
+
+      options.oldValue = angular.copy(options.data);
       callback(undefined);
+    }, function (error) {
+      callback(error);
     });
   }
 }

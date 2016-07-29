@@ -9,8 +9,8 @@ angular
   .factory('jamManager', jamManager);
 
 
-jamManager.$inject = ['$q', 'jamUtil', 'jamData', 'jamPatch'];
-function jamManager($q, jamUtil, jamData, jamPatch) {
+jamManager.$inject = ['$q', 'jamUtil', 'jamData', 'jamPatch', 'jamBatch', 'jamHistory'];
+function jamManager($q, jamUtil, jamData, jamPatch, jamBatch, jamHistory) {
   var service = {
     Create: Create
   };
@@ -56,7 +56,7 @@ function jamManager($q, jamUtil, jamData, jamPatch) {
 
       // if schema is passed in then build scopes of that
       if (options.schema) {
-        options.typeScopes = buildtypeScopes(options.schema);
+        options.typeScopes = buildtypeScopes(options.schema, options.url);
         // convert scopes from object and feeze the objects so they cannot be manipulated
         options.typeScopes = Object.keys(options.typeScopes).map(function (key) {
           Object.freeze(options.typeScopes[key]);
@@ -84,6 +84,7 @@ function jamManager($q, jamUtil, jamData, jamPatch) {
      */
     function get(callback) {
       initDefer.promise.then(function () { // resolves after scopes have been built
+        jamHistory.clear(options);
         jamData.get(options, function (error) {
           if (error === undefined) { updateAllBindings(); }
           if (typeof callback === 'function') { callback(error); }
@@ -127,12 +128,10 @@ function jamManager($q, jamUtil, jamData, jamPatch) {
      */
     // will callback on complete and pass in error if one exists
     function applyChanges(callback) {
-      console.log(jamPatch.diff(options));
-      // jamBatch.add(options, function (error) {
-      //   // TODO check to see if bindings need to be updated
-      //   updateAllBindings();
-      //   if (typeof callback === 'function') { callback(error); }
-      // });
+      jamBatch.add(options, function (error) {
+        updateAllBindings();
+        if (typeof callback === 'function') { callback(error); }
+      });
     }
 
 
@@ -146,12 +145,12 @@ function jamManager($q, jamUtil, jamData, jamPatch) {
      * remove any changes made tht have not been submitted by applyChanges
      */
     function removeChanges() {
-      // var patches = jamPatch.diff(options, true);
-      // if (patches.length > 0) {
-      //   // TODO check to see if bindings need to be updated
-      //   jamPatch.apply(options.data, patches);
-      //   updateAllBindings();
-      // }
+      var patches = jamPatch.diff(options);
+      if (patches.length > 0) {
+        jamPatch.apply(options, patches, true);
+        options.oldValue = angular.copy(options.data);
+        updateAllBindings();
+      }
     }
 
 
