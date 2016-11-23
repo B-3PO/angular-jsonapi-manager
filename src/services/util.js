@@ -68,6 +68,7 @@ function jamUtil(jamStorage, jamKeys) {
 
   // builds url with ids and includes
   function createGetUrl(options, id) {
+    var paths;
     var getUrl = options.url;
     id = options.id || id;
 
@@ -75,11 +76,14 @@ function jamUtil(jamStorage, jamKeys) {
     if (options.include instanceof Array && options.include.length > 0) {
       getUrl += '?include=' + options.include.join(',');
     } else if (typeof options.schema === 'object' && options.schema !== null) {
-      getUrl += '?include=' + getAllObjectPaths(options.schema, '').filter(function (arr) {
-        return arr.length;
-      }).map(function (arr) {
-        return arr.join('.');
-      }).join(',');
+      paths = getAllObjectPaths(options.schema, '');
+      if (paths instanceof Array) {
+        getUrl += '?include=' + paths.filter(function (arr) {
+          return arr.length;
+        }).map(function (arr) {
+          return arr.join('.');
+        }).join(',');
+      }
     }
 
     return getUrl;
