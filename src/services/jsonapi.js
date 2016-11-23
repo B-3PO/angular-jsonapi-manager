@@ -131,7 +131,7 @@ function jamJSONAPI(jamUtil) {
 
   // gets include resource from typelist and if not found then it will pull it from the raw data
   function getInclude(obj, included, typeList) {
-    if (!obj && !included) { return undefined; }
+    if (!obj || !included) { return undefined; }
     var typeObj = findInTypeList(obj, typeList);
     if (typeObj !== undefined) { return typeObj; }
 
@@ -195,7 +195,7 @@ function jamJSONAPI(jamUtil) {
 
   // try to find a type by id, otherwise return undefined
   function findInTypeList(obj, typeList) {
-    if (!typeList || !typeList[obj.type] || !obj) { return undefined; }
+    if (!obj || !typeList || !typeList[obj.type]) { return undefined; }
 
     typeList = typeList[obj.type];
     var i = 0;
